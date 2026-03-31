@@ -5,7 +5,14 @@ import os
 import pickle
 import shutil
 import urllib
+import urllib.request
 import gzip
+import ssl
+import json
+
+_ssl_ctx = ssl.create_default_context()
+_ssl_ctx.check_hostname = False
+_ssl_ctx.verify_mode = ssl.CERT_NONE
 #
 from .... import global_var
 from . import geography, paths, transcode, url
@@ -35,9 +42,9 @@ def download_raw_weather_data(year  = None,
     gz_file_path  = os.path.join(paths.folder_weather_meteofrance_raw,
                                  paths.dikt_files['weather.file_year_month'].format(year = year, month = month),
                                  ) + '.csv.gz'
-    urllib.request.urlretrieve(gzip_file_url,
-                               gz_file_path,
-                               )
+    opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=_ssl_ctx))
+    with opener.open(gzip_file_url) as response, open(gz_file_path, 'wb') as out_file:
+        out_file.write(response.read())
     csv_file_path = os.path.join(paths.folder_weather_meteofrance_raw,
                                  paths.dikt_files['weather.file_year_month'].format(year = year, month = month),
                                  ) + '.csv'
@@ -130,12 +137,17 @@ def download_weather_description():
     csv_file_path = os.path.join(paths.folder_weather_meteofrance_raw,
                                  paths.dikt_files['weather.description'],
                                  ) + '.csv'
-    csv_file_url  = urllib.parse.urljoin(url.dikt['weather.stations'],
-                                         paths.dikt_files['weather.description'],
-                                         ) + '.csv'
-    urllib.request.urlretrieve(csv_file_url,
-                               csv_file_path,
-                               )
+    geojson_url = 'https://object.files.data.gouv.fr/meteofrance/data/synchro_ftp/OBS/SYNOP/postes_synop.geojson'
+    opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=_ssl_ctx))
+    with opener.open(geojson_url) as response:
+        geojson = json.loads(response.read().decode('utf-8'))
+    rows = []
+    for feature in geojson['features']:
+        props = feature['properties']
+        lon, lat = feature['geometry']['coordinates'][:2]
+        rows.append({'ID': props['Id'], 'Nom': props['Nom'], 'Latitude': lat, 'Longitude': lon})
+    df = pd.DataFrame(rows)
+    df.to_csv(csv_file_path, sep=';', index=False)
 
 def read_weather_description():
     """

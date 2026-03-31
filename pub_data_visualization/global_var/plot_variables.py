@@ -3,7 +3,7 @@
     User defined variables for plotting.
     
 """
-from distutils.spawn import find_executable
+from shutil import which as find_executable
 import matplotlib.cm as cm
 
 dt_formatter_file = '%Y%m%d_%H%M'

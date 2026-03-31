@@ -20,5 +20,5 @@ def dt_exists_in_tz(x, tz):
     try:
         x.tz_localize(tz, ambiguous = True)
         return True
-    except NonExistentTimeError:
+    except (NonExistentTimeError, ValueError):
         return False
