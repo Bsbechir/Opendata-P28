@@ -1,7 +1,7 @@
 
 
 from termcolor import colored
-from distutils.spawn import find_executable
+from shutil import which as find_executable
 
 
 size_txt       = 12
