@@ -15,8 +15,8 @@ data_source_load     = global_var.data_source_load_eco2mix
 load_power_unit      = global_var.load_power_gw
 load_nature_forecast = global_var.load_nature_forecast_day1
 map_code             = global_var.geography_map_code_france
-date_min             = pd.Timestamp("2018-01-01 00:00").tz_localize(global_var.dikt_tz[map_code])
-date_max             = pd.Timestamp("2019-01-01 00:00").tz_localize(global_var.dikt_tz[map_code])
+date_min             = pd.Timestamp("2012-01-01 00:00").tz_localize(global_var.dikt_tz[map_code])
+date_max             = pd.Timestamp("2026-01-01 00:00").tz_localize(global_var.dikt_tz[map_code])
 ###############################################################################
 figsize    = global_var.figsize_horizontal_ppt
 folder_out = global_var.path_plots
