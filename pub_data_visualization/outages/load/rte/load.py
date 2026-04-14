@@ -45,7 +45,7 @@ def load(map_code = None):
         dikt_outages = {}
         list_files   = sorted([fname
                                for fname in os.listdir(paths.folder_raw)
-                               if os.path.splitext(fname)[1] == '.xls'
+                                 if os.path.splitext(fname)[1] in ('.xls', '.csv')
                                ])
         assert len(list_files) > 0, ('Files not found.\n'
                                      'They can be downloaded from www.services-rte.com/\n'
@@ -59,13 +59,16 @@ def load(map_code = None):
                                                          ),
                   end = '',
                   )
+            
+            
+            is_xls = os.path.splitext(fname)[1] == '.xls'
             df = pd.read_csv(os.path.join(paths.folder_raw,
                                           fname,
                                           ),
-                             sep        = '\t',
-                             decimal    = ",",
-                             encoding   = 'latin-1',
-                             skipfooter = 2,
+                             sep        = '\t' if is_xls else ';',
+                             decimal    = "," if is_xls else ".",
+                             encoding   = 'latin-1' if is_xls else 'utf-8',
+                             skipfooter = 2 if is_xls else 0,
                              index_col  = False,
                              engine     = 'python',
                              )
