@@ -1,5 +1,3 @@
-
-
 import pandas as pd
 import os
 #
@@ -23,12 +21,19 @@ def load(map_code = None):
                          header = [0],
                          sep = ';',
                          )
+        
+        # --- MODIFICATION ICI : On force le type objet pour éviter l'erreur de type 'str' ---
+        df = df.astype(object) 
+        
         for col in [global_var.capacity_dt_local]:
+            # On convertit en datetime de manière flexible
             df.loc[:,col] = pd.to_datetime(df[col])
+            
         print('Loaded') 
     except Exception as e:
         print('fail - has to read raw data')
         print(e)
+        # ... (reste du code inchangé pour la partie brute) ...
         dikt_capacity = {}
         list_files    = sorted([fname
                                 for fname in os.listdir(paths.folder_raw)
@@ -82,6 +87,8 @@ def load(map_code = None):
                   )
     print('done')
     return df
+
+
 
 
     

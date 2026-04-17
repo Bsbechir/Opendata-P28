@@ -17,10 +17,16 @@ def load():
     df_path = paths.fpath_production_rte_tmp + '.csv'
     try:
         print('Load production/rte - ', end = '')
+        
         df = pd.read_csv(df_path,
-                         header = [0],
-                         sep = ';',
-                         )
+                        header = [0],
+                        sep = ';',
+                        # On retire dtype=object et on utilise une méthode plus robuste
+                        )
+        
+        # LIGNE À AJOUTER : On force la conversion en objet flexible avant de traiter les dates
+        df = df.astype(object) 
+        
         df.loc[:,global_var.production_dt_utc] = pd.to_datetime(df[global_var.production_dt_utc])
         print('Loaded')
     except Exception as e:
@@ -95,7 +101,6 @@ def load():
 
     print('done : df.shape = {0}'.format(df.shape))
     return df
-
 
 
 
