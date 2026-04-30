@@ -109,6 +109,11 @@ df_entsoe["outage_type"] = df_entsoe["businesstype"].map({
     "Planned maintenance": "planned",
     "Unplanned outage": "fortuitous",
 }).fillna(df_entsoe["businesstype"])
+# Convertir les dates ENTSO-E en UTC
+for col in ["creation_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)"]:
+    if col in df_entsoe.columns:
+        df_entsoe[col] = pd.to_datetime(df_entsoe[col], utc=True)
+
 df_entsoe["producer_name"] = "EDF"
 df_entsoe["outage_cause"] = ""
 df_entsoe["outage_status"] = ""
