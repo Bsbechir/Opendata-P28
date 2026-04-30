@@ -13,55 +13,67 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 # ============================================================
 # 1. CHARGER LES DONNÉES RTE
 # ============================================================
+# ============================================================
+# 1. CHARGER LES DONNÉES RTE (tous les .xlsx)
+# ============================================================
 print("=== Chargement RTE ===")
-rte_path = os.path.expanduser(
-    "~/_energy_public_data/24_RTE/DonneesIndisponibilitesProduction/IndisponibilitesProduction.csv"
+import glob
+
+rte_folder = os.path.expanduser(
+    "~/_energy_public_data/24_RTE/DonneesIndisponibilitesProduction/"
 )
-df_rte = pd.read_csv(rte_path, sep=";", low_memory=False)
+
+xlsx_files = sorted(glob.glob(os.path.join(rte_folder, "*.xlsx")))
+print(f"Fichiers trouvés : {len(xlsx_files)}")
+
+dfs_rte = []
+for f in xlsx_files:
+    print(f"  Lecture {os.path.basename(f)}...")
+    df_tmp = pd.read_excel(f)
+    df_tmp["file_name"] = os.path.basename(f)
+    dfs_rte.append(df_tmp)
+
+df_rte = pd.concat(dfs_rte, ignore_index=True)
 print(f"RTE brut : {len(df_rte)} lignes")
 
-# Filtrer nucléaire
-df_rte = df_rte[df_rte["Filière de production"] == "Nucléaire"].copy()
-print(f"RTE nucléaire : {len(df_rte)} lignes")
+# Renommer au format EDF — on matche par le début du nom pour éviter les problèmes d'apostrophes
+rename_map = {}
+for col in df_rte.columns:
+    if col.startswith("Date et heure de publication"):
+        rename_map[col] = "publication_dt (UTC)"
+    elif col == "Message ID":
+        rename_map[col] = "publication_id"
+    elif col == "Version":
+        rename_map[col] = "version"
+    elif col == "Statut":
+        rename_map[col] = "outage_status"
+    elif col.startswith("Type d"):
+        if "indisponibilit" in col:
+            rename_map[col] = "outage_type"
+    elif col.startswith("Nom de l") and "acteur" in col:
+        rename_map[col] = "producer_name"
+    elif col.startswith("Nom de l") and "ouvrage" in col:
+        rename_map[col] = "unit_name"
+    elif col.startswith("Fili"):
+        rename_map[col] = "production_source"
+    elif col == "Code localisation":
+        rename_map[col] = "map_code"
+    elif col.startswith("Capacit") and "install" in col:
+        rename_map[col] = "nominal capacity (MW)"
+    elif col.startswith("Capacit") and "disponible minimale" in col:
+        rename_map[col] = "available capacity (MW)"
+    elif col.startswith("Date de d"):
+        rename_map[col] = "outage_begin_dt (UTC)"
+    elif col.startswith("Date de fin"):
+        rename_map[col] = "outage_end_dt (UTC)"
+    elif col.startswith("Cause"):
+        rename_map[col] = "outage_cause"
 
-# Renommer au format EDF (df.pckl)
-df_rte = df_rte.rename(columns={
-    "Date et heure de publication (UTC)": "publication_dt (UTC)",
-    "Message ID": "publication_id",
-    "Version": "version",
-    "Statut": "outage_status",
-    "Type d'indisponibilité": "outage_type",
-    "Nom de l'acteur de marché": "producer_name",
-    "Nom de l'ouvrage": "unit_name",
-    "Filière de production": "production_source",
-    "Code localisation": "map_code",
-    "Capacité installée": "nominal capacity (MW)",
-    "Capacité disponible minimale": "available capacity (MW)",
-    "Date de début de l'événement (UTC)": "outage_begin_dt (UTC)",
-    "Date de fin de l'événement (UTC)": "outage_end_dt (UTC)",
-    "Cause de l'indisponibilité": "outage_cause",
-    
-})
-
-# Convertir les dates
-for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)", "creation_dt (UTC)"]:
-    if col in df_rte.columns:
-        df_rte[col] = pd.to_datetime(df_rte[col], utc=True)
-
-# Harmoniser les valeurs
-df_rte["production_source"] = "nuclear"
-df_rte["outage_type"] = df_rte["outage_type"].map({
-    "Planifiée": "planned",
-    "Fortuite": "fortuitous",
-}).fillna(df_rte["outage_type"])
-df_rte["map_code"] = "FR"
+df_rte = df_rte.rename(columns=rename_map)
+df_rte["creation_dt (UTC)"] = df_rte["publication_dt (UTC)"]
 df_rte["source"] = "RTE"
+print(f"Colonnes RTE renommées : {list(rename_map.values())}")
 
-# Nettoyer le nom du réacteur (enlever les guillemets)
-df_rte["unit_name"] = df_rte["unit_name"].str.strip('"')
-df_rte["producer_name"] = df_rte["producer_name"].str.strip('"')
-
-# ============================================================
 # 2. CHARGER LES DONNÉES ENTSO-E
 # ============================================================
 print("\n=== Chargement ENTSO-E ===")
