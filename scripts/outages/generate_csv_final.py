@@ -3,21 +3,23 @@ Script de génération du CSV final des indisponibilités nucléaires.
 Lit les données RTE (CSV brut) et ENTSO-E, les transforme au format
 attendu par EDF (même colonnes que df.pckl), et exporte.
 """
+"""
+Script de génération du CSV final des indisponibilités nucléaires.
+Lit les fichiers xlsx RTE (2015-2025) et ENTSO-E, les transforme au format
+attendu par EDF (même colonnes que df.pckl), et exporte.
+"""
 
 import pandas as pd
 import os
+import glob
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
 # ============================================================
-# 1. CHARGER LES DONNÉES RTE
-# ============================================================
-# ============================================================
 # 1. CHARGER LES DONNÉES RTE (tous les .xlsx)
 # ============================================================
 print("=== Chargement RTE ===")
-import glob
 
 rte_folder = os.path.expanduser(
     "~/_energy_public_data/24_RTE/DonneesIndisponibilitesProduction/"
@@ -72,8 +74,12 @@ for col in df_rte.columns:
 df_rte = df_rte.rename(columns=rename_map)
 df_rte["creation_dt (UTC)"] = df_rte["publication_dt (UTC)"]
 df_rte["source"] = "RTE"
-print(f"Colonnes RTE renommées : {list(rename_map.values())}")
 
+# Filtrer nucléaire
+df_rte = df_rte[df_rte["production_source"] == "Nucléaire"].copy()
+print(f"RTE nucléaire : {len(df_rte)} lignes")
+
+# ============================================================
 # 2. CHARGER LES DONNÉES ENTSO-E
 # ============================================================
 print("\n=== Chargement ENTSO-E ===")
@@ -98,12 +104,6 @@ df_entsoe = df_entsoe.rename(columns={
     "biddingzone_domain": "map_code",
 })
 
-# Convertir les dates
-for col in ["creation_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)"]:
-    if col in df_entsoe.columns:
-        df_entsoe[col] = pd.to_datetime(df_entsoe[col], utc=True)
-
-# Harmoniser les valeurs
 df_entsoe["production_source"] = "nuclear"
 df_entsoe["outage_type"] = df_entsoe["businesstype"].map({
     "Planned maintenance": "planned",
@@ -116,7 +116,7 @@ df_entsoe["publication_dt (UTC)"] = df_entsoe["creation_dt (UTC)"]
 df_entsoe["source"] = "ENTSOE"
 
 # ============================================================
-# 3. COLONNES COMMUNES (format df.pckl)
+# 3. COLONNES COMMUNES
 # ============================================================
 colonnes_finales = [
     "publication_id",
@@ -134,10 +134,9 @@ colonnes_finales = [
     "outage_type",
     "outage_cause",
     "outage_status",
-    "source",  # colonne ajoutée pour savoir d'où vient la ligne
+    "source",
 ]
 
-# Ne garder que les colonnes communes
 for col in colonnes_finales:
     if col not in df_rte.columns:
         df_rte[col] = ""
@@ -157,11 +156,36 @@ print(f"  - RTE : {len(df_rte)} lignes")
 print(f"  - ENTSO-E : {len(df_entsoe)} lignes")
 
 # ============================================================
-# 5. STATS
+# 5. NETTOYAGE
 # ============================================================
-print("\n=== Résumé ===")
-print(f"Réacteurs : {df_final['unit_name'].nunique()}")
+print("\n=== Nettoyage ===")
+
+# Harmoniser les types d'arrêt
+df_final["outage_type"] = df_final["outage_type"].replace({
+    "Planifiée": "planned",
+    "Fortuite": "fortuitous",
+})
 print(f"Types d'arrêt : {df_final['outage_type'].unique().tolist()}")
+
+# Harmoniser production_source
+df_final["production_source"] = "nuclear"
+
+# Harmoniser map_code
+df_final["map_code"] = "FR"
+
+# Nettoyer les noms
+df_final["unit_name"] = df_final["unit_name"].str.strip().str.strip('"')
+df_final["producer_name"] = df_final["producer_name"].str.strip().str.strip('"')
+
+# Convertir les dates en UTC
+for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)", "creation_dt (UTC)"]:
+    df_final[col] = pd.to_datetime(df_final[col], utc=True, errors="coerce")
+
+# Trier par date de début d'arrêt
+df_final = df_final.sort_values("outage_begin_dt (UTC)")
+df_final = df_final.reset_index(drop=True)
+
+print(f"Réacteurs : {df_final['unit_name'].nunique()}")
 
 # ============================================================
 # 6. EXPORTER
