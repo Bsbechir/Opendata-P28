@@ -3,7 +3,7 @@ import sys
 from entsoe import EntsoePandasClient
 import pandas as pd
 
-api_key = os.environ.get("ENTSOE_API_KEY")
+api_key = os.environ.get("ENTSOE_API_KEY") #On récupère l'API ici
 if not api_key:
     print("ERREUR : variable ENTSOE_API_KEY non définie")
     print("Lancez : export ENTSOE_API_KEY='votre_clé'")
@@ -11,7 +11,7 @@ if not api_key:
 
 client = EntsoePandasClient(api_key=api_key)
 
-# Fenêtre large pour couvrir l'historique RTE depuis 2015
+# Fenêtre large pour couvrir l'historique ENTSOE depuis 2015
 start = pd.Timestamp('20150101', tz='Europe/Paris')
 end   = pd.Timestamp('20260101', tz='Europe/Paris')
 
