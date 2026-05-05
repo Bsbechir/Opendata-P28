@@ -5,8 +5,8 @@ import glob
 BASE_DIR   = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
-# --- RTE ---
-print("Chargement RTE...")
+# --- RTE (fichiers xlsx) ---
+print("Chargement RTE xlsx...")
 
 rte_folder = os.path.expanduser(
     "~/_energy_public_data/24_RTE/DonneesIndisponibilitesProduction/"
@@ -26,7 +26,6 @@ df_rte = pd.concat(dfs_rte, ignore_index=True)
 print(f"RTE brut : {len(df_rte)} lignes")
 
 # Renommage vers le schéma EDF.
-# On matche par préfixe pour absorber les variantes d'apostrophes dans les en-têtes xlsx.
 rename_map = {}
 for col in df_rte.columns:
     if col.startswith("Date et heure de publication"):
@@ -62,7 +61,6 @@ df_rte = df_rte.rename(columns=rename_map)
 df_rte["creation_dt (UTC)"] = df_rte["publication_dt (UTC)"]
 df_rte["source"] = "RTE"
 
-# On garde uniquement le nucléaire pour rester cohérent avec le périmètre ENTSO-E
 df_rte = df_rte[df_rte["production_source"] == "Nucléaire"].copy()
 print(f"RTE nucléaire : {len(df_rte)} lignes")
 
@@ -89,7 +87,6 @@ df_entsoe = df_entsoe.rename(columns={
 
 df_entsoe["production_source"] = "nuclear"
 
-# ENTSO-E utilise les termes anglais du type REMIT ; on les aligne sur RTE
 df_entsoe["outage_type"] = df_entsoe["businesstype"].map({
     "Planned maintenance": "planned",
     "Unplanned outage":    "fortuitous",
@@ -104,6 +101,60 @@ df_entsoe["outage_cause"]       = ""
 df_entsoe["outage_status"]      = ""
 df_entsoe["publication_dt (UTC)"] = df_entsoe["creation_dt (UTC)"]
 df_entsoe["source"]             = "ENTSOE"
+
+# --- RTE API ---
+print("\nChargement RTE API...")
+rte_api_path = os.path.join(BASE_DIR, "scripts", "outages", "indisponibilites_nucleaires_rte.csv")
+df_rte_api = pd.read_csv(rte_api_path, sep=",", low_memory=False)
+print(f"RTE API brut : {len(df_rte_api)} lignes")
+
+df_rte_api = df_rte_api.rename(columns={
+    "identifier":                              "publication_id",
+    "version":                                 "version",
+    "publication_date":                        "publication_dt (UTC)",
+    "start_date":                              "outage_begin_dt (UTC)",
+    "end_date":                                "outage_end_dt (UTC)",
+    "affected_asset_or_unit_name":             "unit_name",
+    "available_capacity_mw":                   "available capacity (MW)",
+    "installed_capacity_mw":                   "nominal capacity (MW)",
+    "market_participant":                      "producer_name",
+    "creation_date":                           "creation_dt (UTC)",
+    "reason":                                  "outage_cause",
+    "event_status":                            "outage_status",
+})
+
+df_rte_api["production_source"] = "nuclear"
+df_rte_api["map_code"] = "FR"
+
+# Mapper outage_type
+df_rte_api["outage_type"] = df_rte_api["unavailability_type"].map({
+    "PLANNED":   "planned",
+    "UNPLANNED": "fortuitous",
+}).fillna(df_rte_api["unavailability_type"])
+
+# Mapper outage_status
+df_rte_api["outage_status"] = df_rte_api["outage_status"].map({
+    "ACTIVE":    "Actif",
+    "INACTIVE":  "Inactif",
+    "CANCELLED": "Annulé",
+}).fillna(df_rte_api["outage_status"])
+
+# Mapper outage_cause
+df_rte_api["outage_cause"] = df_rte_api["outage_cause"].map({
+    "COMPLEMENTARY_INFORMATION": "Information Complémentaire",
+    "FORESEEN_MAINTENANCE":      "Maintenance prévue",
+    "UNPLANNED_MAINTENANCE":     "Maintenance non prévue",
+    "UNPLANNED_OUTAGE":          "Arrêt non prévu",
+    "PLANNED_MAINTENANCE":       "Maintenance prévue",
+}).fillna(df_rte_api["outage_cause"])
+
+# Convertir les dates ISO vers datetime UTC
+for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)", "creation_dt (UTC)"]:
+    if col in df_rte_api.columns:
+        df_rte_api[col] = pd.to_datetime(df_rte_api[col], utc=True)
+
+df_rte_api["source"] = "RTE_API"
+print(f"RTE API nucléaire : {len(df_rte_api)} lignes")
 
 # --- Fusion ---
 colonnes_finales = [
@@ -125,19 +176,21 @@ colonnes_finales = [
     "source",
 ]
 
-# Les colonnes absentes d'une source sont remplies à vide plutôt que de planter
 for col in colonnes_finales:
     if col not in df_rte.columns:
         df_rte[col] = ""
     if col not in df_entsoe.columns:
         df_entsoe[col] = ""
+    if col not in df_rte_api.columns:
+        df_rte_api[col] = ""
 
-df_rte    = df_rte[colonnes_finales]
-df_entsoe = df_entsoe[colonnes_finales]
+df_rte     = df_rte[colonnes_finales]
+df_entsoe  = df_entsoe[colonnes_finales]
+df_rte_api = df_rte_api[colonnes_finales]
 
 print("\nFusion...")
-df_final = pd.concat([df_rte, df_entsoe], ignore_index=True)
-print(f"Total : {len(df_final)} lignes  (RTE: {len(df_rte)}, ENTSO-E: {len(df_entsoe)})")
+df_final = pd.concat([df_rte, df_entsoe, df_rte_api], ignore_index=True)
+print(f"Total : {len(df_final)} lignes  (RTE xlsx: {len(df_rte)}, ENTSO-E: {len(df_entsoe)}, RTE API: {len(df_rte_api)})")
 
 # --- Nettoyage ---
 print("\nNettoyage...")
@@ -148,18 +201,21 @@ df_final["outage_type"] = df_final["outage_type"].replace({
 })
 print(f"Types d'arrêt : {df_final['outage_type'].unique().tolist()}")
 
-# Normalisation forcée : les deux sources couvrent uniquement le nucléaire FR
 df_final["production_source"] = "nuclear"
 df_final["map_code"]          = "FR"
 
-# Nettoyage des guillemets résiduels dans les noms d'unités (présents dans certains xlsx RTE)
 df_final["unit_name"]     = df_final["unit_name"].str.strip().str.strip('"')
 df_final["producer_name"] = df_final["producer_name"].str.strip().str.strip('"')
 
 for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)", "creation_dt (UTC)"]:
     df_final[col] = pd.to_datetime(df_final[col], utc=True, errors="coerce")
 
+# Deduplication : garder la version la plus recente par publication_id
+df_final = df_final.sort_values(["publication_id", "version"], ascending=[True, False])
+df_final = df_final.drop_duplicates(subset=["publication_id", "version"], keep="first")
+
 df_final = df_final.sort_values("outage_begin_dt (UTC)").reset_index(drop=True)
+print(f"Après déduplication : {len(df_final)} lignes")
 print(f"Réacteurs distincts : {df_final['unit_name'].nunique()}")
 
 # --- Export ---
@@ -167,3 +223,4 @@ output_file = os.path.join(OUTPUT_DIR, "indisponibilites_nucleaire_final.csv")
 df_final.to_csv(output_file, sep=";", index=False, encoding="utf-8")
 print(f"\nCSV exporté : {output_file}")
 print(f"Lignes : {len(df_final)}")
+print(f"Sources : {df_final['source'].value_counts().to_dict()}")
