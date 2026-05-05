@@ -5,7 +5,6 @@ import glob
 BASE_DIR   = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
-# --- RTE (fichiers xlsx) ---
 print("Chargement RTE xlsx...")
 
 rte_folder = os.path.expanduser(
@@ -25,7 +24,6 @@ for f in xlsx_files:
 df_rte = pd.concat(dfs_rte, ignore_index=True)
 print(f"RTE brut : {len(df_rte)} lignes")
 
-# Renommage vers le schéma EDF.
 rename_map = {}
 for col in df_rte.columns:
     if col.startswith("Date et heure de publication"):
@@ -64,7 +62,6 @@ df_rte["source"] = "RTE"
 df_rte = df_rte[df_rte["production_source"] == "Nucléaire"].copy()
 print(f"RTE nucléaire : {len(df_rte)} lignes")
 
-# --- ENTSO-E ---
 print("\nChargement ENTSO-E...")
 entsoe_path = os.path.join(OUTPUT_DIR, "indisponibilites_entsoe.csv")
 df_entsoe = pd.read_csv(entsoe_path, sep=";", low_memory=False)
@@ -96,13 +93,12 @@ for col in ["creation_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)"]
     if col in df_entsoe.columns:
         df_entsoe[col] = pd.to_datetime(df_entsoe[col], utc=True)
 
-df_entsoe["producer_name"]      = "EDF"
-df_entsoe["outage_cause"]       = ""
-df_entsoe["outage_status"]      = ""
+df_entsoe["producer_name"]        = "EDF"
+df_entsoe["outage_cause"]         = ""
+df_entsoe["outage_status"]        = ""
 df_entsoe["publication_dt (UTC)"] = df_entsoe["creation_dt (UTC)"]
-df_entsoe["source"]             = "ENTSOE"
+df_entsoe["source"]               = "ENTSOE"
 
-# --- RTE API ---
 print("\nChargement RTE API...")
 rte_api_path = os.path.join(BASE_DIR, "scripts", "outages", "indisponibilites_nucleaires_rte.csv")
 df_rte_api = pd.read_csv(rte_api_path, sep=",", low_memory=False)
@@ -126,20 +122,17 @@ df_rte_api = df_rte_api.rename(columns={
 df_rte_api["production_source"] = "nuclear"
 df_rte_api["map_code"] = "FR"
 
-# Mapper outage_type
 df_rte_api["outage_type"] = df_rte_api["unavailability_type"].map({
     "PLANNED":   "planned",
     "UNPLANNED": "fortuitous",
 }).fillna(df_rte_api["unavailability_type"])
 
-# Mapper outage_status
 df_rte_api["outage_status"] = df_rte_api["outage_status"].map({
     "ACTIVE":    "Actif",
     "INACTIVE":  "Inactif",
     "CANCELLED": "Annulé",
 }).fillna(df_rte_api["outage_status"])
 
-# Mapper outage_cause
 df_rte_api["outage_cause"] = df_rte_api["outage_cause"].map({
     "COMPLEMENTARY_INFORMATION": "Information Complémentaire",
     "FORESEEN_MAINTENANCE":      "Maintenance prévue",
@@ -148,7 +141,6 @@ df_rte_api["outage_cause"] = df_rte_api["outage_cause"].map({
     "PLANNED_MAINTENANCE":       "Maintenance prévue",
 }).fillna(df_rte_api["outage_cause"])
 
-# Convertir les dates ISO vers datetime UTC
 for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)", "creation_dt (UTC)"]:
     if col in df_rte_api.columns:
         df_rte_api[col] = pd.to_datetime(df_rte_api[col], utc=True)
@@ -156,7 +148,6 @@ for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC
 df_rte_api["source"] = "RTE_API"
 print(f"RTE API nucléaire : {len(df_rte_api)} lignes")
 
-# --- Fusion ---
 colonnes_finales = [
     "publication_id",
     "version",
@@ -192,7 +183,6 @@ print("\nFusion...")
 df_final = pd.concat([df_rte, df_entsoe, df_rte_api], ignore_index=True)
 print(f"Total : {len(df_final)} lignes  (RTE xlsx: {len(df_rte)}, ENTSO-E: {len(df_entsoe)}, RTE API: {len(df_rte_api)})")
 
-# --- Nettoyage ---
 print("\nNettoyage...")
 
 df_final["outage_type"] = df_final["outage_type"].replace({
@@ -218,7 +208,6 @@ df_final = df_final.sort_values("outage_begin_dt (UTC)").reset_index(drop=True)
 print(f"Après déduplication : {len(df_final)} lignes")
 print(f"Réacteurs distincts : {df_final['unit_name'].nunique()}")
 
-# --- Export ---
 output_file = os.path.join(OUTPUT_DIR, "indisponibilites_nucleaire_final.csv")
 df_final.to_csv(output_file, sep=";", index=False, encoding="utf-8")
 print(f"\nCSV exporté : {output_file}")
