@@ -1,20 +1,5 @@
-"""
-analyse_croisement_sources.py
-=============================
-Analyse les intersections et différences entre les sources RTE et ENTSO-E.
-
-Contexte : RTE a l'obligation légale de publier TOUTES les indisponibilités.
-Donc les données RTE sont la référence. ENTSO-E est un miroir européen qui
-devrait contenir les mêmes données (transmises par RTE à ENTSO-E).
-
-Ce script vérifie :
-  1. Quels réacteurs sont présents dans chaque source
-  2. Quelles périodes sont couvertes par chaque source
-  3. Les événements présents dans RTE mais absents d'ENTSO-E (et inversement)
-  4. La cohérence des puissances déclarées
-
-Résultat : un rapport texte affiché dans le terminal + CSV d'analyse dans output/
-"""
+# compare les donnees RTE et ENTSO-E
+# RTE est la reference (obligation legale de tout publier)
 
 import pandas as pd
 import os
@@ -37,16 +22,13 @@ for col in ["outage_begin_dt (UTC)", "outage_end_dt (UTC)"]:
     df[col] = pd.to_datetime(df[col], utc=True, errors="coerce")
 
 # Séparer les sources
-# On regroupe RTE xlsx + RTE API car c'est la même autorité
 df_rte    = df[df["source"].isin(["RTE", "RTE_API"])].copy()
 df_entsoe = df[df["source"] == "ENTSOE"].copy()
 
 print(f"\nLignes RTE (xlsx + API) : {len(df_rte)}")
 print(f"Lignes ENTSO-E          : {len(df_entsoe)}")
 
-# ================================================================
-# 1. RÉACTEURS PAR SOURCE
-# ================================================================
+# 1. reacteurs par source
 print("\n" + "=" * 70)
 print("1. RÉACTEURS PAR SOURCE")
 print("=" * 70)
@@ -70,9 +52,7 @@ if only_entsoe:
     for r in sorted(only_entsoe):
         print(f"  - {r}")
 
-# ================================================================
-# 2. COUVERTURE TEMPORELLE
-# ================================================================
+# 2. couverture temporelle
 print("\n" + "=" * 70)
 print("2. COUVERTURE TEMPORELLE")
 print("=" * 70)
@@ -85,14 +65,12 @@ df["year"] = df["outage_begin_dt (UTC)"].dt.year
 pivot = df.groupby(["year", "source"]).size().unstack(fill_value=0)
 print(pivot.to_string())
 
-# ================================================================
-# 3. INTERSECTION DES ÉVÉNEMENTS
-# ================================================================
+# 3. intersection des evenements
 print("\n" + "=" * 70)
 print("3. INTERSECTION DES ÉVÉNEMENTS")
 print("=" * 70)
 
-# Clé de rapprochement : réacteur + date début arrondie au jour
+# cle = reacteur + jour de debut
 df_rte["match_key"] = (
     df_rte["unit_name"].str.upper().str.strip() + "|" +
     df_rte["outage_begin_dt (UTC)"].dt.strftime("%Y-%m-%d")
@@ -119,9 +97,7 @@ if len(keys_rte) > 0:
     print(f"\nTaux de couverture ENTSO-E par rapport à RTE : {taux_couverture:.1f}%")
     print("(= % des événements RTE qui ont un équivalent dans ENTSO-E)")
 
-# ================================================================
-# 4. COHÉRENCE DES PUISSANCES
-# ================================================================
+# 4. puissances
 print("\n" + "=" * 70)
 print("4. COHÉRENCE DES PUISSANCES NOMINALES")
 print("=" * 70)
@@ -140,9 +116,7 @@ if len(ecarts) > 0:
 else:
     print("Toutes les puissances nominales sont cohérentes (écart < 5%)")
 
-# ================================================================
-# 5. EXPORT DU RAPPORT
-# ================================================================
+# 5. export
 rapport_path = os.path.join(OUTPUT_DIR, "rapport_croisement_sources.csv")
 df_rapport = pd.DataFrame({
     "métrique": [

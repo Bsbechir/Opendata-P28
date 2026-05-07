@@ -4,9 +4,8 @@
 
 Récupérer les données d'indisponibilité du parc nucléaire français depuis des sources publiques, les nettoyer et les fusionner en un seul fichier CSV livrable à EDF et au Groupe B.
 
-**Ce qu'on ne fait PAS** : pas d'API, pas de connexion aux serveurs EDF, pas de publication sur l'OpenData (c'est EDF qui s'en charge avec notre CSV).
+On ne cree pas d'API et on ne publie rien, c'est EDF qui fait ca avec notre CSV.
 
----
 
 ## Sources de données
 
@@ -16,9 +15,7 @@ Récupérer les données d'indisponibilité du parc nucléaire français depuis 
 | RTE API | Automatique (API REST) | `download_rte_unavailability.py` | Mêmes données |
 | ENTSO-E | Automatique (entsoe-py) | `download_entsoe.py` | Miroir européen |
 
-> **Note** : RTE a l'obligation légale de publier toutes les indisponibilités. Les données RTE sont donc la **référence**. ENTSO-E est un miroir qui reçoit les données de RTE.
-
----
+RTE doit tout publier (obligation legale), donc c'est notre reference. ENTSO-E c'est un miroir europeen.
 
 ## CSV final
 
@@ -51,7 +48,6 @@ Récupérer les données d'indisponibilité du parc nucléaire français depuis 
 - Période : juillet 2014 → aujourd'hui
 - Le statut `DISMISSED` (62 lignes RTE API) n'est pas traduit en français
 
----
 
 ## Installation
 
@@ -101,7 +97,6 @@ Les fichiers xlsx RTE doivent être dans :
 ~/_energy_public_data/24_RTE/DonneesIndisponibilitesProduction/
 ```
 
----
 
 ## Structure du repo
 
@@ -121,7 +116,6 @@ Opendata-P28/
 └── README.md                               # Ce fichier
 ```
 
----
 
 ## Équipe
 

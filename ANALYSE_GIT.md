@@ -1,6 +1,6 @@
-# Analyse critique du dépôt Git — Opendata-P28
+# Bilan du repo Git
 
-## État actuel
+## Ou on en est
 
 | Métrique | Valeur |
 |---|---|
@@ -10,14 +10,14 @@
 | Taille repo | 80 Mo (dont 31 Mo dans `.git/`) |
 | Taille CSV trackés | 49 Mo (avant nettoyage salve 1) |
 
-## Points positifs
+## Ce qui va
 
 - **Commits clairs** : les messages décrivent bien ce qui a été fait (`"CSV final nettoyé : 71726 lignes, types harmonisés, dates UTC"`)
 - **Progression logique** : les commits suivent les phases du projet (installation → données → fusion → nettoyage)
 - **Branche séparée** : le travail est isolé sur `groupe-a-data`, le `master` (code CRE) reste intact
 - **3 sources fusionnées** : le CSV final est complet (RTE xlsx + RTE API + ENTSO-E)
 
-## Problèmes identifiés et corrigés
+## Ce qu'on a corrige
 
 | Problème | Gravité | Statut |
 |---|---|---|
@@ -30,7 +30,7 @@
 | Modules CRE inutilisés | Mineur | Corrigé (salve 2) |
 | `requirements.txt` = dump 150 packages | Mineur | Corrigé (salve 2) |
 
-## Problèmes restants
+## Ce qui reste a faire
 
 | Problème | Gravité | Action |
 |---|---|---|
@@ -41,7 +41,7 @@
 | Pas de CI/CD | Mineur | Hors scope du projet |
 | Pas de tests unitaires | Mineur | Hors scope du projet |
 
-## Recommandations pour la soutenance
+## Pour la soutenance
 
 1. **Révoquer les anciens credentials RTE** — c'est la seule action urgente restante
 2. **Ajouter un tag** `v1.0-livraison` sur le commit de livraison
