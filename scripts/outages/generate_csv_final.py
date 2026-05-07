@@ -252,9 +252,28 @@ df_final["producer_name"] = df_final["producer_name"].str.strip().str.strip('"')
 for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)", "creation_dt (UTC)"]:
     df_final[col] = pd.to_datetime(df_final[col], utc=True, errors="coerce")
 
-# Déduplication : garder la version la plus récente par publication_id
+# --- Déduplication intra-source ---
+# Même publication_id + même version = doublon exact → on garde 1 seul
 df_final = df_final.sort_values(["publication_id", "version"], ascending=[True, False])
 df_final = df_final.drop_duplicates(subset=["publication_id", "version"], keep="first")
+print(f"Après dédup intra-source : {len(df_final)} lignes")
+
+# --- Déduplication cross-source ---
+# Un même arrêt peut exister dans RTE xlsx ET RTE API avec des IDs différents.
+# On les détecte par : même réacteur + même jour de début + même type d'arrêt.
+# Priorité : RTE (xlsx officiel) > RTE_API > ENTSOE
+df_final["_dedup_key"] = (
+    df_final["unit_name"].str.upper().str.strip() + "|" +
+    pd.to_datetime(df_final["outage_begin_dt (UTC)"], utc=True).dt.strftime("%Y-%m-%d") + "|" +
+    df_final["outage_type"].str.lower().str.strip()
+)
+source_priority = {"RTE": 0, "RTE_API": 1, "ENTSOE": 2}
+df_final["_source_rank"] = df_final["source"].map(source_priority).fillna(3)
+df_final = df_final.sort_values(["_dedup_key", "_source_rank", "version"], ascending=[True, True, False])
+before_cross = len(df_final)
+df_final = df_final.drop_duplicates(subset=["_dedup_key"], keep="first")
+print(f"Dédup cross-source : {before_cross} → {len(df_final)} ({before_cross - len(df_final)} doublons retirés)")
+df_final = df_final.drop(columns=["_dedup_key", "_source_rank"])
 
 # Trier par date de début
 df_final = df_final.sort_values("outage_begin_dt (UTC)").reset_index(drop=True)
