@@ -3,11 +3,19 @@ import base64
 import json
 import csv
 import time
+import os
+import sys
 from datetime import datetime, timedelta
 
-# Remplace par tes identifiants
-client_id = "ff38cd7c-9c03-4779-abda-9072af7b7970"
-client_secret = "24905268-fa8c-4e5c-b72f-f1b8da0dbd25"
+# Identifiants via variables d'environnement (ne JAMAIS les mettre en dur)
+client_id = os.environ.get("RTE_CLIENT_ID")
+client_secret = os.environ.get("RTE_CLIENT_SECRET")
+if not client_id or not client_secret:
+    print("ERREUR : RTE_CLIENT_ID et RTE_CLIENT_SECRET non définis")
+    print("Lancez :")
+    print("  export RTE_CLIENT_ID='votre_id'")
+    print("  export RTE_CLIENT_SECRET='votre_secret'")
+    sys.exit(1)
 
 BASE_URL = "https://digital.iservices.rte-france.com"
 API_URL = f"{BASE_URL}/open_api/unavailability_additional_information/v7/generation_unavailabilities"
@@ -63,7 +71,7 @@ def filter_nuclear(unavails):
 
 
 def extract_row(u):
-    # Capacites dans le tableau values
+    
     values = u.get("values", [{}])
     first_val = values[0] if values else {}
 
@@ -108,8 +116,11 @@ def main():
 
     for year in range(YEAR_START, YEAR_END + 1):
         for month in range(1, 13):
-            # Ne pas depasser la date actuelle
-            if year == 2025 and month > 5:
+            
+            now = datetime.now()
+            if year == now.year and month > now.month:
+                break
+            if year > now.year:
                 break
 
             print(f"  {year}-{month:02d}...", end=" ", flush=True)

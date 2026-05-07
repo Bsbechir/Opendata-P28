@@ -39,4 +39,15 @@ doc/objects.inv
 doc/searchindex.js
 doc_source/
 
+# Données générées (ne pas tracker)
+output/*.csv
+output/plots/
+*.pckl
+*.pkl
+*.pickle
+*.parquet
+
+# Secrets
+.env
+indisponibilites_nucleaires_rte.csv
 

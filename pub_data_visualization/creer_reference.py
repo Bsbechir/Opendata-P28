@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 # Dossier cible
-path = r'C:\Users\Valen\Downloads\pub-data-visualization\data\production_capacity\unit\rte\tmp'
+path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'production_capacity', 'unit', 'rte', 'tmp')
 os.makedirs(path, exist_ok=True)
 
 # Création d'un référentiel minimal pour le nucléaire français
