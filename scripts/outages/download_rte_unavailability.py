@@ -116,6 +116,7 @@ def extract_row(u):
 
 
 def main():
+    '''Point d'entrée du script. Il gère le processus de téléchargement des données d'indisponibilité nucléaire depuis l'API de RTE, en traitant les données mois par mois, en filtrant pour ne garder que les arrêts nucléaires, et en extrayant les informations pertinentes pour les sauvegarder dans un fichier CSV. Le script gère également le renouvellement du token d'accès si celui-ci expire pendant le processus de téléchargement.'''
     print(">> Telechargement des indisponibilites nucleaires RTE")
     print(f"Periode: {annee_debut} - {annee_fin}")
 
