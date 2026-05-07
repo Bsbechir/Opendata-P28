@@ -1,17 +1,21 @@
+# recupere les indispos ENTSO-E pour la France
+# il faut mettre ENTSOE_API_KEY dans l'environnement avant
+
 import os
 import sys
 from entsoe import EntsoePandasClient
 import pandas as pd
 
-api_key = os.environ.get("ENTSOE_API_KEY") #On récupère l'API ici
+api_key = os.environ.get("ENTSOE_API_KEY")
 if not api_key:
     print("ERREUR : variable ENTSOE_API_KEY non définie")
     print("Lancez : export ENTSOE_API_KEY='votre_clé'")
     sys.exit(1)
 
+
 client = EntsoePandasClient(api_key=api_key)
 
-# Fenêtre large pour couvrir l'historique ENTSOE depuis 2015
+# periode assez large pour couvrir tout le projet
 start = pd.Timestamp('20150101', tz='Europe/Paris')
 end   = pd.Timestamp('20260101', tz='Europe/Paris')
 

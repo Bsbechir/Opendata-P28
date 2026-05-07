@@ -1,3 +1,5 @@
+# je regroupe les 3 fichiers d'indisponibilites dans un seul csv
+
 import pandas as pd
 import os
 import glob
@@ -5,6 +7,7 @@ import glob
 BASE_DIR   = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
+# d'abord les fichiers xlsx de RTE
 print("Chargement RTE xlsx...")
 
 rte_folder = os.path.expanduser(
@@ -24,6 +27,7 @@ for f in xlsx_files:
 df_rte = pd.concat(dfs_rte, ignore_index=True)
 print(f"RTE brut : {len(df_rte)} lignes")
 
+# les noms de colonnes RTE changent un peu selon les fichiers
 rename_map = {}
 for col in df_rte.columns:
     if col.startswith("Date et heure de publication"):
@@ -62,6 +66,7 @@ df_rte["source"] = "RTE"
 df_rte = df_rte[df_rte["production_source"] == "Nucléaire"].copy()
 print(f"RTE nucléaire : {len(df_rte)} lignes")
 
+# puis les donnees ENTSO-E
 print("\nChargement ENTSO-E...")
 entsoe_path = os.path.join(OUTPUT_DIR, "indisponibilites_entsoe.csv")
 df_entsoe = pd.read_csv(entsoe_path, sep=";", low_memory=False)
@@ -99,6 +104,7 @@ df_entsoe["outage_status"]        = ""
 df_entsoe["publication_dt (UTC)"] = df_entsoe["creation_dt (UTC)"]
 df_entsoe["source"]               = "ENTSOE"
 
+# et enfin le csv recupere avec l'API RTE
 print("\nChargement RTE API...")
 rte_api_path = os.path.join(BASE_DIR, "scripts", "outages", "indisponibilites_nucleaires_rte.csv")
 df_rte_api = pd.read_csv(rte_api_path, sep=",", low_memory=False)
@@ -147,6 +153,8 @@ for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC
 
 df_rte_api["source"] = "RTE_API"
 print(f"RTE API nucléaire : {len(df_rte_api)} lignes")
+
+# on remet tout dans le meme ordre avant de concatener
 
 colonnes_finales = [
     "publication_id",
@@ -200,9 +208,25 @@ df_final["producer_name"] = df_final["producer_name"].str.strip().str.strip('"')
 for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)", "creation_dt (UTC)"]:
     df_final[col] = pd.to_datetime(df_final[col], utc=True, errors="coerce")
 
-# Deduplication : garder la version la plus recente par publication_id
+# deja vu : meme publication et meme version
 df_final = df_final.sort_values(["publication_id", "version"], ascending=[True, False])
 df_final = df_final.drop_duplicates(subset=["publication_id", "version"], keep="first")
+print(f"Après dédup intra-source : {len(df_final)} lignes")
+
+# parfois le meme arret est present dans plusieurs sources
+# je garde RTE xlsx en premier car c'est la source la plus lisible ici
+df_final["_dedup_key"] = (
+    df_final["unit_name"].str.upper().str.strip() + "|" +
+    pd.to_datetime(df_final["outage_begin_dt (UTC)"], utc=True).dt.strftime("%Y-%m-%d") + "|" +
+    df_final["outage_type"].str.lower().str.strip()
+)
+source_priority = {"RTE": 0, "RTE_API": 1, "ENTSOE": 2}
+df_final["_source_rank"] = df_final["source"].map(source_priority).fillna(3)
+df_final = df_final.sort_values(["_dedup_key", "_source_rank", "version"], ascending=[True, True, False])
+before_cross = len(df_final)
+df_final = df_final.drop_duplicates(subset=["_dedup_key"], keep="first")
+print(f"Dédup cross-source : {before_cross} → {len(df_final)} ({before_cross - len(df_final)} doublons retirés)")
+df_final = df_final.drop(columns=["_dedup_key", "_source_rank"])
 
 df_final = df_final.sort_values("outage_begin_dt (UTC)").reset_index(drop=True)
 print(f"Après déduplication : {len(df_final)} lignes")

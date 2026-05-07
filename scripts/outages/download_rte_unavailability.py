@@ -1,27 +1,35 @@
 import requests
 import base64
-import json
 import csv
 import time
-from datetime import datetime, timedelta
+import os
+import sys
+from datetime import datetime
 
-# Remplace par tes identifiants
-client_id = "ff38cd7c-9c03-4779-abda-9072af7b7970"
-client_secret = "24905268-fa8c-4e5c-b72f-f1b8da0dbd25"
+# identifiants pour l'API RTE
+client_id = os.environ.get("RTE_CLIENT_ID")
+client_secret = os.environ.get("RTE_CLIENT_SECRET")
+if not client_id or not client_secret:
+    print("ERREUR : RTE_CLIENT_ID et RTE_CLIENT_SECRET non définis")
+    print("Lancez :")
+    print("  export RTE_CLIENT_ID='votre_id'")
+    print("  export RTE_CLIENT_SECRET='votre_secret'")
+    sys.exit(1)
 
-BASE_URL = "https://digital.iservices.rte-france.com"
-API_URL = f"{BASE_URL}/open_api/unavailability_additional_information/v7/generation_unavailabilities"
+url_base = "https://digital.iservices.rte-france.com"
+url_api = f"{url_base}/open_api/unavailability_additional_information/v7/generation_unavailabilities"
 
-YEAR_START = 2015
-YEAR_END = 2026
+annee_debut = 2015
+annee_fin = 2026
 
-OUTPUT_CSV = "indisponibilites_nucleaires_rte.csv"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+fichier_csv = os.path.join(SCRIPT_DIR, "indisponibilites_nucleaires_rte.csv")
 
 
 def get_token():
     credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
     r = requests.post(
-        f"{BASE_URL}/token/oauth/",
+        f"{url_base}/token/oauth/",
         headers={"Authorization": f"Basic {credentials}"}
     )
     if r.status_code != 200:
@@ -43,7 +51,7 @@ def download_month(token, year, month):
         "end_date": end,
     }
 
-    r = requests.get(API_URL, headers=headers, params=params)
+    r = requests.get(url_api, headers=headers, params=params)
 
     if r.status_code in [200, 206]:
         data = r.json()
@@ -63,7 +71,6 @@ def filter_nuclear(unavails):
 
 
 def extract_row(u):
-    # Capacites dans le tableau values
     values = u.get("values", [{}])
     first_val = values[0] if values else {}
 
@@ -90,10 +97,8 @@ def extract_row(u):
 
 
 def main():
-    print("=" * 60)
-    print("Telechargement des indisponibilites nucleaires RTE")
-    print(f"Periode: {YEAR_START} - {YEAR_END}")
-    print("=" * 60)
+    print(">> Telechargement des indisponibilites nucleaires RTE")
+    print(f"Periode: {annee_debut} - {annee_fin}")
 
     token = get_token()
     if not token:
@@ -106,10 +111,12 @@ def main():
     total_brut = 0
     total_nuclear = 0
 
-    for year in range(YEAR_START, YEAR_END + 1):
+    for year in range(annee_debut, annee_fin + 1):
         for month in range(1, 13):
-            # Ne pas depasser la date actuelle
-            if year == 2025 and month > 5:
+            now = datetime.now()
+            if year == now.year and month > now.month:
+                break
+            if year > now.year:
                 break
 
             print(f"  {year}-{month:02d}...", end=" ", flush=True)
@@ -136,21 +143,21 @@ def main():
 
             print(f"{len(result)} brut -> {len(nuclear)} nucleaire")
 
-            # Pause pour ne pas surcharger l'API (max 20 appels/heure recommande)
+            # l'API limite le nombre d'appels, donc on ralentit un peu
             time.sleep(3)
 
-    print(f"\n{'=' * 60}")
+    print("\n---")
     print(f"Total brut: {total_brut}")
     print(f"Total nucleaire: {total_nuclear}")
-    print(f"{'=' * 60}")
+    print("---")
 
     if all_rows:
         fieldnames = list(all_rows[0].keys())
-        with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
+        with open(fichier_csv, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(all_rows)
-        print(f"\nCSV exporte: {OUTPUT_CSV}")
+        print(f"\nCSV exporte: {fichier_csv}")
         print(f"Nombre de lignes: {len(all_rows)}")
     else:
         print("\nAucune donnee recuperee.")
