@@ -1,13 +1,12 @@
 import requests
 import base64
-import json
 import csv
 import time
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 
-# creds OAuth2
+# identifiants pour l'API RTE
 client_id = os.environ.get("RTE_CLIENT_ID")
 client_secret = os.environ.get("RTE_CLIENT_SECRET")
 if not client_id or not client_secret:
@@ -23,7 +22,8 @@ url_api = f"{url_base}/open_api/unavailability_additional_information/v7/generat
 annee_debut = 2015
 annee_fin = 2026
 
-fichier_csv = "indisponibilites_nucleaires_rte.csv"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+fichier_csv = os.path.join(SCRIPT_DIR, "indisponibilites_nucleaires_rte.csv")
 
 
 def get_token():
@@ -71,7 +71,6 @@ def filter_nuclear(unavails):
 
 
 def extract_row(u):
-    
     values = u.get("values", [{}])
     first_val = values[0] if values else {}
 
@@ -98,10 +97,8 @@ def extract_row(u):
 
 
 def main():
-    print("=" * 60)
-    print("Telechargement des indisponibilites nucleaires RTE")
+    print(">> Telechargement des indisponibilites nucleaires RTE")
     print(f"Periode: {annee_debut} - {annee_fin}")
-    print("=" * 60)
 
     token = get_token()
     if not token:
@@ -116,7 +113,6 @@ def main():
 
     for year in range(annee_debut, annee_fin + 1):
         for month in range(1, 13):
-            
             now = datetime.now()
             if year == now.year and month > now.month:
                 break
@@ -147,13 +143,13 @@ def main():
 
             print(f"{len(result)} brut -> {len(nuclear)} nucleaire")
 
-            # Pause pour ne pas surcharger l'API (max 20 appels/heure recommande)
+            # l'API limite le nombre d'appels, donc on ralentit un peu
             time.sleep(3)
 
-    print(f"\n{'=' * 60}")
+    print("\n---")
     print(f"Total brut: {total_brut}")
     print(f"Total nucleaire: {total_nuclear}")
-    print(f"{'=' * 60}")
+    print("---")
 
     if all_rows:
         fieldnames = list(all_rows[0].keys())

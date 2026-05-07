@@ -1,6 +1,6 @@
 """
 update.py
-=========
+
 Script d'orchestration robuste.
 
 Avant de lancer les scripts, il vérifie que :
@@ -21,22 +21,17 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 SCRIPTS  = os.path.join(BASE_DIR, "scripts", "outages")
 OUTPUT   = os.path.join(BASE_DIR, "output")
 
-# ============================================
-# Vérifications préalables
-# ============================================
-print("=" * 60)
-print("  MISE À JOUR DES DONNÉES NUCLÉAIRES")
+# on verifie avant de lancer les 3 scripts
+print(">> Mise a jour des donnees nucleaires")
 print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-print("=" * 60)
 
 errors = []
 
-# Vérifier les variables d'environnement
 for var in ["ENTSOE_API_KEY", "RTE_CLIENT_ID", "RTE_CLIENT_SECRET"]:
     if not os.environ.get(var):
         errors.append(f"Variable manquante : {var}")
 
-# Vérifier le dossier xlsx RTE
+# les xlsx RTE ne sont pas telecharges par ce script
 rte_folder = os.path.expanduser(
     "~/_energy_public_data/24_RTE/DonneesIndisponibilitesProduction/"
 )
@@ -60,9 +55,7 @@ if errors:
 print("OK  Variables d'environnement OK")
 print()
 
-# ============================================
-# Exécution des étapes
-# ============================================
+# ordre important : les telechargements avant la fusion
 steps = [
     ("1/3 Téléchargement ENTSO-E",  "download_entsoe.py"),
     ("2/3 Téléchargement RTE API",  "download_rte_unavailability.py"),
@@ -70,9 +63,7 @@ steps = [
 ]
 
 for msg, script in steps:
-    print(f"\n{'─' * 60}")
-    print(f"  {msg}")
-    print(f"{'─' * 60}")
+    print(f"\n>> {msg}")
     result = subprocess.run(
         [sys.executable, os.path.join(SCRIPTS, script)],
         cwd=BASE_DIR
@@ -81,12 +72,7 @@ for msg, script in steps:
         print(f"\nEchec : {script}")
         sys.exit(1)
 
-# ============================================
-# Résumé
-# ============================================
-print(f"\n{'=' * 60}")
-print("  RESUME")
-print(f"{'=' * 60}")
+print("\n>> Resume")
 
 csv_path = os.path.join(OUTPUT, "indisponibilites_nucleaire_final.csv")
 if os.path.exists(csv_path):
@@ -100,6 +86,4 @@ if os.path.exists(csv_path):
 else:
     print("  CSV final non trouvé")
 
-print(f"\n{'=' * 60}")
-print("  Mise a jour terminee")
-print(f"{'=' * 60}")
+print("\n>> Mise a jour terminee")

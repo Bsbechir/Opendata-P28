@@ -1,13 +1,15 @@
-# Projet P17 — Données de disponibilité nucléaire (Groupe A)
+# Projet P17 - indisponibilites nucleaires
 
 ## Objectif
 
-Récupérer les données d'indisponibilité du parc nucléaire français depuis des sources publiques, les nettoyer et les fusionner en un seul fichier CSV livrable à EDF et au Groupe B.
+Dans cette partie du projet, on s'occupe surtout de la donnee.
 
-On ne cree pas d'API et on ne publie rien, c'est EDF qui fait ca avec notre CSV.
+Le but est de recuperer les indisponibilites du parc nucleaire francais, puis de les nettoyer pour sortir un CSV commun. Ce fichier doit ensuite pouvoir etre utilise par EDF et par le groupe B pour la partie visualisation.
+
+On ne fait pas d'API ici. On prepare les fichiers.
 
 
-## Sources de données
+## Sources utilisees
 
 | Source | Méthode | Script | Obligation légale |
 |---|---|---|---|
@@ -15,12 +17,13 @@ On ne cree pas d'API et on ne publie rien, c'est EDF qui fait ca avec notre CSV.
 | RTE API | Automatique (API REST) | `download_rte_unavailability.py` | Mêmes données |
 | ENTSO-E | Automatique (entsoe-py) | `download_entsoe.py` | Miroir européen |
 
-RTE doit tout publier (obligation legale), donc c'est notre reference. ENTSO-E c'est un miroir europeen.
+En pratique, RTE est notre source principale. Les donnees ENTSO-E sont utiles pour comparer, mais elles sont moins completes sur certains champs.
 
 ## CSV final
 
 **Fichier** : `output/indisponibilites_nucleaire_final.csv`
-**Taille** : ~110 000 lignes, 58 réacteurs, 3 sources fusionnées
+
+**Ordre de grandeur** : environ 110 000 lignes avant les derniers nettoyages, 58 reacteurs, 3 sources au depart. Le nombre final peut changer si on relance les scripts avec de nouvelles donnees.
 
 | Colonne | Description | Exemple |
 |---|---|---|
@@ -44,9 +47,10 @@ RTE doit tout publier (obligation legale), donc c'est notre reference. ENTSO-E c
 ### Limites connues
 
 - Les données ENTSO-E n'ont pas de `outage_cause` ni `outage_status` (ces champs sont vides)
-- Pas de déduplication cross-source : un même événement peut apparaître dans RTE xlsx ET RTE API avec des `publication_id` différents
-- Période : juillet 2014 → aujourd'hui
+- La deduplication cross-source reste approximative : on compare surtout le reacteur, le jour de debut et le type d'arret
+- Période : juillet 2014 a aujourd'hui selon les fichiers disponibles
 - Le statut `DISMISSED` (62 lignes RTE API) n'est pas traduit en français
+- Les fichiers RTE xlsx sont encore recuperes a la main, donc il faut les mettre au bon endroit avant de lancer la fusion
 
 
 ## Installation
@@ -62,7 +66,7 @@ pip install -r requirements.txt
 
 ## Configuration
 
-Créer les variables d'environnement (voir `.env.example`) :
+Il faut mettre les cles API dans l'environnement. Le fichier `.env.example` donne le format attendu.
 
 ```bash
 export RTE_CLIENT_ID='votre_id'
@@ -73,26 +77,24 @@ export ENTSOE_API_KEY='votre_cle'
 ## Utilisation
 
 ```bash
-# Mise à jour complète (téléchargement + fusion)
+# normalement on lance ca
 python3 scripts/outages/update.py
 
-# Ou étape par étape :
+# sinon on peut relancer les etapes une par une
 python3 scripts/outages/download_entsoe.py
 python3 scripts/outages/download_rte_unavailability.py
 python3 scripts/outages/generate_csv_final.py
 
-# Analyse croisée RTE vs ENTSO-E
-python3 scripts/outages/analyse_croisement_sources.py
-
-# Visualisation par réacteur
+# visualisation rapide
 python3 scripts/outages/main_incremental_programs.py --list
 python3 scripts/outages/main_incremental_programs.py --centrale "GRAVELINES 1"
 python3 scripts/outages/main_incremental_programs.py --site GRAVELINES --annee-min 2020
+python3 scripts/outages/main_incremental_programs.py --all
 ```
 
 ### Données manuelles
 
-Les fichiers xlsx RTE doivent être dans :
+Les fichiers xlsx RTE ne sont pas telecharges automatiquement par nos scripts. Il faut les mettre ici :
 ```
 ~/_energy_public_data/24_RTE/DonneesIndisponibilitesProduction/
 ```
@@ -103,17 +105,16 @@ Les fichiers xlsx RTE doivent être dans :
 ```
 Opendata-P28/
 ├── scripts/outages/
-│   ├── download_entsoe.py                  # Télécharge ENTSO-E
-│   ├── download_rte_unavailability.py      # Télécharge API RTE
-│   ├── generate_csv_final.py               # Fusionne les 3 sources → CSV
-│   ├── update.py                           # Lance tout dans l'ordre
-│   ├── analyse_croisement_sources.py       # Compare RTE vs ENTSO-E
-│   └── main_incremental_programs.py        # Visualisation Gantt par centrale
+│   ├── download_entsoe.py                  # recupere ENTSO-E
+│   ├── download_rte_unavailability.py      # recupere l'API RTE
+│   ├── generate_csv_final.py               # fusionne les sources
+│   ├── update.py                           # lance les scripts dans l'ordre
+│   └── main_incremental_programs.py        # quelques graphes par reacteur/site
 ├── output/
-│   └── (CSV générés, non trackés par git)
-├── .env.example                            # Template des clés API
-├── requirements.txt                        # Dépendances Python
-└── README.md                               # Ce fichier
+│   └── (CSV generes, non suivis par git)
+├── .env.example
+├── requirements.txt
+└── README.md
 ```
 
 
@@ -125,3 +126,11 @@ Opendata-P28/
 | Groupe B | Oumar, Corentin |
 | Encadrement | EDF |
 | Repo d'origine | [cre-dev/pub-data-visualization](https://github.com/cre-dev/pub-data-visualization) |
+
+## Notes
+
+Le script principal pour produire le CSV final est `scripts/outages/generate_csv_final.py`.
+
+`update.py` sert juste a lancer les telechargements puis la fusion dans le bon ordre. Si une cle API manque ou si les xlsx RTE ne sont pas presents, il s'arrete avant de lancer les scripts.
+
+Pour les graphes, `--centrale` affiche un seul reacteur, `--site` affiche tous les reacteurs d'un site, et `--all` sauvegarde un PNG par reacteur dans `output/plots/centrales/`.

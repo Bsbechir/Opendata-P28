@@ -1,14 +1,13 @@
-# fusion des 3 sources (RTE xlsx + ENTSOE + RTE API) en un seul CSV
+# je regroupe les 3 fichiers d'indisponibilites dans un seul csv
 
 import pandas as pd
 import os
 import glob
 
-# --- Chemins ---
 BASE_DIR   = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
-# --- source 1 : xlsx RTE ---
+# d'abord les fichiers xlsx de RTE
 print("Chargement RTE xlsx...")
 
 rte_folder = os.path.expanduser(
@@ -28,7 +27,7 @@ for f in xlsx_files:
 df_rte = pd.concat(dfs_rte, ignore_index=True)
 print(f"RTE brut : {len(df_rte)} lignes")
 
-# renommage des colonnes
+# les noms de colonnes RTE changent un peu selon les fichiers
 rename_map = {}
 for col in df_rte.columns:
     if col.startswith("Date et heure de publication"):
@@ -67,7 +66,7 @@ df_rte["source"] = "RTE"
 df_rte = df_rte[df_rte["production_source"] == "Nucléaire"].copy()
 print(f"RTE nucléaire : {len(df_rte)} lignes")
 
-# --- source 2 : ENTSO-E ---
+# puis les donnees ENTSO-E
 print("\nChargement ENTSO-E...")
 entsoe_path = os.path.join(OUTPUT_DIR, "indisponibilites_entsoe.csv")
 df_entsoe = pd.read_csv(entsoe_path, sep=";", low_memory=False)
@@ -105,7 +104,7 @@ df_entsoe["outage_status"]        = ""
 df_entsoe["publication_dt (UTC)"] = df_entsoe["creation_dt (UTC)"]
 df_entsoe["source"]               = "ENTSOE"
 
-# --- source 3 : RTE API ---
+# et enfin le csv recupere avec l'API RTE
 print("\nChargement RTE API...")
 rte_api_path = os.path.join(BASE_DIR, "scripts", "outages", "indisponibilites_nucleaires_rte.csv")
 df_rte_api = pd.read_csv(rte_api_path, sep=",", low_memory=False)
@@ -155,7 +154,7 @@ for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC
 df_rte_api["source"] = "RTE_API"
 print(f"RTE API nucléaire : {len(df_rte_api)} lignes")
 
-# --- fusion ---
+# on remet tout dans le meme ordre avant de concatener
 
 colonnes_finales = [
     "publication_id",
@@ -192,7 +191,6 @@ print("\nFusion...")
 df_final = pd.concat([df_rte, df_entsoe, df_rte_api], ignore_index=True)
 print(f"Total : {len(df_final)} lignes  (RTE xlsx: {len(df_rte)}, ENTSO-E: {len(df_entsoe)}, RTE API: {len(df_rte_api)})")
 
-# --- nettoyage ---
 print("\nNettoyage...")
 
 df_final["outage_type"] = df_final["outage_type"].replace({
@@ -210,13 +208,13 @@ df_final["producer_name"] = df_final["producer_name"].str.strip().str.strip('"')
 for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)", "creation_dt (UTC)"]:
     df_final[col] = pd.to_datetime(df_final[col], utc=True, errors="coerce")
 
-# dedup : meme id + meme version = doublon
+# deja vu : meme publication et meme version
 df_final = df_final.sort_values(["publication_id", "version"], ascending=[True, False])
 df_final = df_final.drop_duplicates(subset=["publication_id", "version"], keep="first")
 print(f"Après dédup intra-source : {len(df_final)} lignes")
 
-# dedup cross-source : meme reacteur + meme jour = doublon
-# on garde RTE xlsx en priorite
+# parfois le meme arret est present dans plusieurs sources
+# je garde RTE xlsx en premier car c'est la source la plus lisible ici
 df_final["_dedup_key"] = (
     df_final["unit_name"].str.upper().str.strip() + "|" +
     pd.to_datetime(df_final["outage_begin_dt (UTC)"], utc=True).dt.strftime("%Y-%m-%d") + "|" +
@@ -234,7 +232,6 @@ df_final = df_final.sort_values("outage_begin_dt (UTC)").reset_index(drop=True)
 print(f"Après déduplication : {len(df_final)} lignes")
 print(f"Réacteurs distincts : {df_final['unit_name'].nunique()}")
 
-# --- export ---
 output_file = os.path.join(OUTPUT_DIR, "indisponibilites_nucleaire_final.csv")
 df_final.to_csv(output_file, sep=";", index=False, encoding="utf-8")
 print(f"\nCSV exporté : {output_file}")
