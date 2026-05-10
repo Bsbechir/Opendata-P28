@@ -4,7 +4,6 @@
 #.gitignore
 venv/
 .idea/
-.claude/
 
 
 # Files

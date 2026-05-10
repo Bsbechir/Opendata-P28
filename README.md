@@ -72,7 +72,7 @@ Voici la description des colonnes présentes sur le CSV :
 
 Certaines données historiques ne sont pas disponibles via API et doivent être récupérées manuellement.
 
-Données RTE (Excel) : Vous devez télécharger les fichiers .xlsx directement depuis le site services-rte.com.
+* **Données RTE (Excel)** : Vous devez télécharger les fichiers `.xlsx` manuellement depuis la plateforme [RTE IIP](https://iip.cloud-rte-france.com/production-unavailability).
 
 Chemin local : Ces fichiers doivent impérativement être placés dans le répertoire suivant pour être détectés par le script de fusion :
 ~/_energy_public_data/24_RTE/DonneesIndisponibilitesProduction/
@@ -86,8 +86,9 @@ Le projet nécessite des clés d'accès aux API de **RTE** et d'**ENTSO-E**. Ces
 
 ### 1. Clés d'API requises
 Vous pouvez obtenir vos accès gratuitement sur les portails développeurs respectifs :
-*   **RTE** : [Portail Data de RTE](https://www.services-rte.com/) (créez une application pour obtenir l'ID et le Secret).
-*   **ENTSO-E** : [Transparency Platform](https://transparency.entsoe.eu/) (la clé s'obtient dans les paramètres de votre compte).
+*  **RTE** : Inscrivez-vous sur le [Portail Data de RTE](https://data.rte-france.com/) pour créer une application et obtenir vos identifiants (ID et Secret). Vous pouvez consulter la documentation de l'API utilisée ici : [API Unavailability v7.0](https://data.rte-france.com/catalog/-/api/generation/Unavailability-Additional-Information/v7.0).
+*   ***ENTSO-E** : Créez un compte sur la [Transparency Platform](https://transparency.entsoe.eu/). Une fois connecté, votre clé (**API Security Token**) se trouve dans votre profil utilisateur. 
+  *Note : Si le token (API Security Token) n'est pas visible, une demande d'activation par mail à transparency@entsoe.eu peut être nécessaire.*
 
 ### 2. Mise en place des variables
 Un fichier `.env.example` est fourni à la racine du projet pour servir de modèle. 
