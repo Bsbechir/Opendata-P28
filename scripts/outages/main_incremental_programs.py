@@ -1,6 +1,9 @@
 ''' Ici nous avons un script pour visualiser les différents arrêts nucléaires par réacteur ou par site.
 Il utilise le fichier CSV final généré par le processus de mise à jour des données d'indisponibilité de production nucléaire.
 Executez le script update.py avant de lancer ce script pour vous assurer que les données sont à jour.
+Le script peut être utilisé pour afficher un graphique pour un réacteur spécifique, pour un site entier, ou pour tous les réacteurs. 
+Les graphiques sont sauvegardés dans output/plots/centrales avec des noms de fichiers basés sur les noms des réacteurs (ex: GRAVELINES_1.png). 
+Vous pouvez aussi filtrer les arrêts par année minimum et maximum.
 '''
 import pandas as pd
 import matplotlib.pyplot as plt
