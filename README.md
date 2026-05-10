@@ -17,7 +17,7 @@ Note importante: On ne réalise pas d'API ici. On utilise celles de ENTSOE et RT
 
 ## Sources utilisées
 
-Note importante: Ce projet s'appuie sur le cadre réglementaire européen REMIT (Regulation on Wholesale Energy Market Integrity and Transparency), qui impose aux exploitants une transparence totale et immédiate sur les indisponibilités de production afin de garantir l'intégrité des marchés de l'énergie et d'éviter toute asymétrie d'information. »
+Note importante: Ce projet s'appuie sur le cadre réglementaire européen REMIT (Regulation on Wholesale Energy Market Integrity and Transparency), qui impose aux exploitants une transparence totale et immédiate sur les indisponibilités de production afin de garantir l'intégrité des marchés de l'énergie et d'éviter toute asymétrie d'information.
 
 | Source | Méthode | Script | Obligation légale |
 |---|---|---|---|
@@ -25,7 +25,7 @@ Note importante: Ce projet s'appuie sur le cadre réglementaire européen REMIT 
 | RTE API | Automatique (API REST) | `download_rte_unavailability.py` | Règlement REMIT : Obligation de transparence immédiate sur les informations privilégiées |
 | ENTSO-E | Automatique (entsoe-py) | `download_entsoe.py` | Règlement Transparence (UE 543/2013) : Centralisation européenne des données de production |
 
-# Pourquoi croiser ces sources ?
+### Pourquoi croiser ces sources ?
 Bien que RTE soit l'acteur central pour le parc français, ce projet utilise une approche multi-sources pour plusieurs raisons :
 
 Complétude des données : RTE est la source la plus riche sur les causes d'arrêts en français, tandis qu'ENTSO-E fournit une vision standardisée au niveau européen.
@@ -68,7 +68,7 @@ Voici la description des colonnes présentes sur le CSV :
 - Période : juillet 2014 à aujourd'hui selon les fichiers disponibles
 - Le statut `DISMISSED` (62 lignes RTE API) n'est pas traduit en français
 
-### Prérequis : Installation des fichiers sources 
+## Prérequis : Installation des fichiers sources 
 
 Certaines données historiques ne sont pas disponibles via API et doivent être récupérées manuellement.
 
