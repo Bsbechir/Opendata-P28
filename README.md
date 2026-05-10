@@ -12,12 +12,12 @@ Le but est premièrement de récuperer les données d'indisponibilites du parc n
 Ensuite de nettoyer les données, les fusionner afin de créer un CSV qui répertorie toutes les informations.
 Dans le cadre de notre projet ce fichier CSV doit ensuite pouvoir être éventuellement utilisé pour être publié sur l'Open-Data d'EDF. Il doit pouvoir également servir à alimenter un site que nos camarades construisent, qui propose une visualisation de ces données.
 
-# Note importante: On ne réalise pas d'API ici. On utilise celles de ENTSOE et RTE pour construire un fichier.
+Note importante: On ne réalise pas d'API ici. On utilise celles de ENTSOE et RTE pour construire un fichier.
 
 
 ## Sources utilisées
 
-# Note importante: Ce projet s'appuie sur le cadre réglementaire européen REMIT (Regulation on Wholesale Energy Market Integrity and Transparency), qui impose aux exploitants une transparence totale et immédiate sur les indisponibilités de production afin de garantir l'intégrité des marchés de l'énergie et d'éviter toute asymétrie d'information. »
+Note importante: Ce projet s'appuie sur le cadre réglementaire européen REMIT (Regulation on Wholesale Energy Market Integrity and Transparency), qui impose aux exploitants une transparence totale et immédiate sur les indisponibilités de production afin de garantir l'intégrité des marchés de l'énergie et d'éviter toute asymétrie d'information. »
 
 | Source | Méthode | Script | Obligation légale |
 |---|---|---|---|
