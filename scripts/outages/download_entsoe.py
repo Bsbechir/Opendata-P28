@@ -1,6 +1,7 @@
 '''Ce fichier récupère les données d'indisponibilités depuis la source ENTSOE
 Attention : Il faut mettre la clé API ENTSOE dans une variable d'environnement ENTSOE_API_KEY avant de lancer ce script (cf README.md)
-Lancez : export ENTSOE_API_KEY='votre_clé'  
+Lancez : export ENTSOE_API_KEY='votre_clé' 
+Le script rend un CSV avec les données d'indisponibilité de production nucléaire en France de 2015 à 2025, sauvegardé dans output/indisponibilites_entsoe.csv 
 '''
 
 import os

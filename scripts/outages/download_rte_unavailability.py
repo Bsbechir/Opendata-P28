@@ -3,6 +3,7 @@ Attention : Il faut mettre RTE_CLIENT_ID et RTE_CLIENT_SECRET dans l'environneme
 Lancez :
    export RTE_CLIENT_ID='votre_id'
    export RTE_CLIENT_SECRET='votre_secret'
+Le script rend un CSV avec les données d'indisponibilité de production nucléaire en France de 2015 à 2025, sauvegardé dans output/indisponibilites_nucleaires_rte.csv
 '''
 import requests
 import base64
