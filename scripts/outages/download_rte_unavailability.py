@@ -1,9 +1,9 @@
-# Ce fichier récupère les données d'indisponibilités depuis la source RTE
-# Attention : Il faut mettre RTE_CLIENT_ID et RTE_CLIENT_SECRET dans l'environnement avant de lancer ce script
-# Lancez :
-#   export RTE_CLIENT_ID='votre_id'
-#   export RTE_CLIENT_SECRET='votre_secret'
-
+'''Ce fichier récupère les données d'indisponibilités depuis l'API RTE
+Attention : Il faut mettre RTE_CLIENT_ID et RTE_CLIENT_SECRET dans l'environnement avant de lancer ce script (cf README.md)
+Lancez :
+   export RTE_CLIENT_ID='votre_id'
+   export RTE_CLIENT_SECRET='votre_secret'
+'''
 import requests
 import base64
 import json

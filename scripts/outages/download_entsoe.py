@@ -1,6 +1,7 @@
-# Ce fichier récupère les données d'indisponibilités depuis la source ENTSOE
-# Attention : Il faut mettre ENTSOE_API_KEY dans l'environnement avant de lancer ce script
-# Lancez : export ENTSOE_API_KEY='votre_clé'
+'''Ce fichier récupère les données d'indisponibilités depuis la source ENTSOE
+Attention : Il faut mettre la clé API ENTSOE dans une variable d'environnement ENTSOE_API_KEY avant de lancer ce script (cf README.md)
+Lancez : export ENTSOE_API_KEY='votre_clé'  
+'''
 
 import os
 import sys
@@ -20,7 +21,7 @@ start = pd.Timestamp('20150101', tz='Europe/Paris')
 end   = pd.Timestamp('20260101', tz='Europe/Paris')
 
 print("Téléchargement des indisponibilités en cours...")
-df = client.query_unavailability_of_generation_units('FR', start=start, end=end) # On utilise le client pour faire une requête à l'API d'ENTSOE afin de récupérer les données d'indisponibilité.
+df = client.query_unavailability_of_generation_units('FR', start=start, end=end) # On utilise le client pour faire une requête à l'API d'ENTSOE afin de récupérer les données d'indisponibilités.On récupère tout les types de centrales de production.
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # On définit le chemin de base pour sauvegarder les données.
 output_path = os.path.join(BASE_DIR, "output", "indisponibilites_entsoe.csv") # On définit le chemin complet du fichier CSV où les données seront sauvegardées

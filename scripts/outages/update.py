@@ -1,11 +1,12 @@
 '''Script de mise à jour des données d'indisponibilité de production nucléaire.
 
-Avant de lancer les scripts, il faut s'assurer que :
+Avant de lancer les scripts, il faut s'assurer que (CF README.md) :
   - Les clés d'API ont été définies (ENTSOE_API_KEY, RTE_CLIENT_ID, RTE_CLIENT_SECRET). Sinon, referez vous à download_rte_unavailability.py et download_entsoe.py ou .env.example
   - Le dossier des xlsx RTE existe et contient des fichiers.
 
 Après exécution, le programme affiche un résumé avec la taille du CSV final. 
-Le CSV final est mis à jour dans output/indisponibilites_nucleaire_final.csv'''
+Le CSV final est mis à jour dans output/indisponibilites_nucleaire_final.csv
+'''
 
 import subprocess
 import sys
