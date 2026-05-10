@@ -1,16 +1,16 @@
 # Etude des indisponibilités du parc nucléaire français
 
 ## Préambule 
-Ce git est le fruit d'un projet effectué par des étudiants de CentraleSupélec dans le cadre de l'enseignement Pôle Projet de l'école en partenariat avec l'entreprise EDF. Ce travail s'effectue au sein du pôle 17 " Nouveaux Concepts Énergétiques" et a pour but d'étudier la disponibilité du parc nucléaire français. Ce git constitue la première partie de ce travail.
+Ce dépôt git est le résultat d'un projet effectué par des étudiants de CentraleSupélec dans le cadre de l'enseignement Pôle Projet de l'école et en partenariat avec l'entreprise EDF. Ce travail s'effectue au sein du pôle 17 " Nouveaux Concepts Énergétiques" et a pour but d'étudier la disponibilité du parc nucléaire français. Ce git constitue la première partie de ce travail.
 
-Nous avons construit notre travail à partir d'un repo Git fourni par l'entreprise EDF:
+Nous avons construit ce travail à partir d'un repo Git fourni par l'entreprise EDF:
 [cre-dev/pub-data-visualization](https://github.com/cre-dev/pub-data-visualization)
 
 ## Objectif
 
-Le but est premièrement de récuperer les données d'indisponibilites du parc nucleaire francais en s'appuyant sur les publications des API d'ENTSOE et RTE. 
-Ensuite de nettoyer les données, les fusionner afin de créer un CSV qui répertorie toutes les informations.
-Dans le cadre de notre projet ce fichier CSV doit ensuite pouvoir être éventuellement utilisé pour être publié sur l'Open-Data d'EDF. Il doit pouvoir également servir à alimenter un site que nos camarades construisent, qui propose une visualisation de ces données.
+Le but est premièrement de récuperer les données d'indisponibilités du parc nucleaire français en s'appuyant sur les publications d'ENTSOE et RTE. 
+Ensuite, le but était de nettoyer les données puis les fusionner afin de créer un CSV qui répertorie toutes les informations des deux sources.
+Dans le cadre de notre projet, ce fichier CSV devait ensuite pouvoir être éventuellement utilisé pour être publié sur l'Open-Data d'EDF. Il devait pouvoir également servir à alimenter un site que nos camarades construisent, qui propose une visualisation de ces données.
 
 Note importante: On ne réalise pas d'API ici. On utilise celles de ENTSOE et RTE pour construire un fichier.
 
