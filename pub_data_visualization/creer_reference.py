@@ -4,9 +4,6 @@ import os
 # Dossier cible
 <<<<<<< HEAD
 path = r'C:\Users\Valen\Downloads\pub-data-visualization\data\production_capacity\unit\rte\tmp'
-=======
-path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'production_capacity', 'unit', 'rte', 'tmp')
->>>>>>> 0eae9f2c987d4825350d6453fe118fa312096005
 os.makedirs(path, exist_ok=True)
 
 # Création d'un référentiel minimal pour le nucléaire français
