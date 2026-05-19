@@ -1,10 +1,10 @@
-''' Ce script permet de regrouper les 3 fichiers d'indisponibilités dans un seul csv.
- On prend les données d'indisponibilité de production nucléaire de RTE via les fichiers xlsx, d'ENTSO-E (csv) via un script présent sur ce github et de l'API RTE (csv) via un script présent sur ce git (csv). 
+''' Ce script permet de regrouper les 2 sources de données d'indisponibilités de production nucléaire dans un seul CSV.
+ On prend les données d'indisponibilité de production nucléaire de RTE via les fichiers xlsx et de l'API RTE (csv) via un script présent sur ce git (csv). 
  On les nettoie et on les fusionne dans un seul fichier CSV final.
  Le fichier final peut etre ensuite utilisé pour faire des analyses ou des visualisations sur les indisponibilités de production nucléaire en France.
  
  Attention : ce script suppose que les données d'indisponibilité de production nucléaire ont déjà été téléchargées en : 
- 1: Exécutant les scripts download_entsoe.py et download_rte_unavailability.py. Ces scripts récupèrent les données depuis leurs sources respectives et les sauvegardent dans des fichiers CSV intermédiaires. 
+ 1: Exécutant le scripts download_rte_unavailability.py.Ce script télécharge les données d'indisponibilité de production nucléaire de RTE via leur API et les sauvegarde dans un fichier CSV. 
  2: En ayant les fichiers xlsx de RTE déjà présents dans le dossier spécifié "~/_energy_public_data/24_RTE/DonneesIndisponibilitesProduction" sur votre ordinateur. 
  
  Si ces données ne sont pas présentes, ce script ne pourra pas fonctionner correctement. Assurez-vous d'avoir exécuté les scripts de téléchargement et d'avoir les fichiers nécessaires avant de lancer ce script.
@@ -129,7 +129,7 @@ for col in ["publication_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC
 df_rte_api["source"] = "RTE_API"
 print(f"RTE API nucléaire : {len(df_rte_api)} lignes")
 
-#On remet tout les colonnesdans le meme ordre avant de concatener
+#On remet tout les colonnes dans le même ordre avant de concatener
 
 colonnes_finales = [
     "publication_id",
@@ -189,7 +189,7 @@ df_final = df_final.drop_duplicates(subset=["publication_id", "version"], keep="
 # Parfois le même arret est present dans plusieurs sources
 # On choisit de garder RTE xlsx en premier car c'est la source la plus lisible ici
 
-#Les commandes suivantes ont été suggérées par l'IA pour créer des clés de déduplication basées sur le nom de l'unité de production, la date de début de l'arrêt et le type d'arrêt. En attribuant une priorité aux sources (RTE xlsx > RTE API > ENTSO-E) et en triant les données en conséquence, on peut ensuite supprimer les doublons en ne gardant que la ligne la plus prioritaire pour chaque arrêt.
+#Les commandes suivantes ont été suggérées par l'IA pour créer des clés de déduplication basées sur le nom de l'unité de production, la date de début de l'arrêt et le type d'arrêt. En attribuant une priorité (RTE xlsx > RTE API ) et en triant les données en conséquence, on peut ensuite supprimer les doublons en ne gardant que la ligne la plus prioritaire pour chaque arrêt.
 df_final["_dedup_key"] = (
     df_final["unit_name"].str.upper().str.strip() + "|" +
     pd.to_datetime(df_final["outage_begin_dt (UTC)"], utc=True).dt.strftime("%Y-%m-%d") + "|" +

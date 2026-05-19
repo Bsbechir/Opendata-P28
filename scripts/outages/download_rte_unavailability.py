@@ -12,12 +12,14 @@ import csv
 import time
 import os
 import sys
-env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env")
+env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env") # On cherche un fichier .env à la racine du projet pour charger les variables d'environnement. 
+# Si ce fichier existe, on lit chaque ligne et on ajoute les variables d'environnement définies dans ce fichier à l'environnement d'exécution du script. 
+# Cela permet de stocker les identifiants de manière sécurisée et de ne pas les inclure directement dans le code source. Le format attendu du fichier .env est une ligne par variable, avec le format KEY=VALUE, et les lignes commençant par # sont considérées comme des commentaires.
 if os.path.isfile(env_file):
     for line in open(env_file):
         if "=" in line and not line.startswith("#"):
-            k, v = line.strip().split("=", 1)
-            os.environ.setdefault(k, v)
+            k, v = line.strip().split("=", 1) # On sépare la ligne en deux parties : la clé (k) et la valeur (v). Le paramètre 1 de split signifie que l'on ne fait qu'une seule séparation, ce qui permet de gérer les valeurs qui contiennent elles-mêmes des signes égal.
+            os.environ.setdefault(k, v) # On ajoute la variable d'environnement à l'environnement d'exécution du script, mais seulement si elle n'est pas déjà définie (os.environ.setdefault).
 
 client_id = os.environ.get("RTE_CLIENT_ID")
 client_secret = os.environ.get("RTE_CLIENT_SECRET")
