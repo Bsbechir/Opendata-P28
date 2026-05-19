@@ -1,34 +1,26 @@
 '''Script de mise à jour des données d'indisponibilité de production nucléaire.
 
-<<<<<<< Updated upstream
 Avant de lancer les scripts, il faut s'assurer que (CF README.md) :
-  - Les clés d'API ont été définies (ENTSOE_API_KEY, RTE_CLIENT_ID, RTE_CLIENT_SECRET). Sinon, referez vous à download_rte_unavailability.py et download_entsoe.py ou .env.example
+  - Les clés d'API ont été définies (RTE_CLIENT_ID, RTE_CLIENT_SECRET). Sinon, referez vous à download_rte_unavailability.py ou .env.example.
   - Le dossier des xlsx RTE existe et contient des fichiers.
 
 Après exécution, le programme affiche un résumé avec la taille du CSV final. 
 Le CSV final est mis à jour dans output/indisponibilites_nucleaire_final.csv
 '''
-=======
-Avant de lancer les scripts, il vérifie que :
-  - Les variables d'environnement sont définies
-  - Le dossier des xlsx RTE existe
-
-Après exécution, il affiche un résumé avec la taille du CSV final.
-
-"""
->>>>>>> Stashed changes
 
 import subprocess
 import sys
 import os
 from datetime import datetime
 
-env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env")
+env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env")# On cherche un fichier .env à la racine du projet pour charger les variables d'environnement. 
+#Si ce fichier existe, on lit chaque ligne et on ajoute les variables d'environnement définies dans ce fichier à l'environnement d'exécution du script.
+# Cela permet de stocker les identifiants de manière sécurisée et de ne pas les inclure directement dans le code source.
 if os.path.isfile(env_file):
     for line in open(env_file):
         if "=" in line and not line.startswith("#"):
-            k, v = line.strip().split("=", 1)
-            os.environ.setdefault(k, v)
+            k, v = line.strip().split("=", 1) # On sépare la ligne en deux parties : la clé (k) et la valeur (v). Le paramètre 1 de split signifie que l'on ne fait qu'une seule séparation, ce qui permet de gérer les valeurs qui contiennent elles-mêmes des signes égal.
+            os.environ.setdefault(k, v) # On ajoute la variable d'environnement à l'environnement d'exécution du script, mais seulement si elle n'est pas déjà définie (os.environ.setdefault).
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # On définit le chemin de base du projet.
 SCRIPTS  = os.path.join(BASE_DIR, "scripts", "outages") # On définit le chemin du dossier contenant les scripts d'indisponibilité de production nucléaire.

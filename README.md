@@ -25,7 +25,7 @@ Note importante: Ce projet s'appuie sur le cadre réglementaire européen REMIT 
 | RTE API | Automatique (API REST) | `download_rte_unavailability.py` | Règlement REMIT : Obligation de transparence immédiate sur les informations privilégiées |
 
 
-### Pourquoi ces sources ?
+### Pourquoi cette sources ?
 
 Obligation Miroir : En vertu du règlement REMIT, toute indisponibilité de production doit être publiée simultanément sur la plateforme nationale (RTE).
 
@@ -66,8 +66,6 @@ Voici la description des colonnes présentes sur le CSV :
 ## Prérequis techniques
 
 Python : version 3.10 ou supérieure (développé et testé avec Python 3.12)
-pip : installé avec Python
-git : pour cloner le dépôt
 
 ## Installation
 
