@@ -1,5 +1,6 @@
 '''Script de mise à jour des données d'indisponibilité de production nucléaire.
 
+<<<<<<< Updated upstream
 Avant de lancer les scripts, il faut s'assurer que (CF README.md) :
   - Les clés d'API ont été définies (ENTSOE_API_KEY, RTE_CLIENT_ID, RTE_CLIENT_SECRET). Sinon, referez vous à download_rte_unavailability.py et download_entsoe.py ou .env.example
   - Le dossier des xlsx RTE existe et contient des fichiers.
@@ -7,11 +8,27 @@ Avant de lancer les scripts, il faut s'assurer que (CF README.md) :
 Après exécution, le programme affiche un résumé avec la taille du CSV final. 
 Le CSV final est mis à jour dans output/indisponibilites_nucleaire_final.csv
 '''
+=======
+Avant de lancer les scripts, il vérifie que :
+  - Les variables d'environnement sont définies
+  - Le dossier des xlsx RTE existe
+
+Après exécution, il affiche un résumé avec la taille du CSV final.
+
+"""
+>>>>>>> Stashed changes
 
 import subprocess
 import sys
 import os
 from datetime import datetime
+
+env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env")
+if os.path.isfile(env_file):
+    for line in open(env_file):
+        if "=" in line and not line.startswith("#"):
+            k, v = line.strip().split("=", 1)
+            os.environ.setdefault(k, v)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # On définit le chemin de base du projet.
 SCRIPTS  = os.path.join(BASE_DIR, "scripts", "outages") # On définit le chemin du dossier contenant les scripts d'indisponibilité de production nucléaire.
@@ -23,7 +40,7 @@ print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M')}") # Affiche la date et l'h
 
 errors = []
 
-for var in ["ENTSOE_API_KEY", "RTE_CLIENT_ID", "RTE_CLIENT_SECRET"]:
+for var in ["RTE_CLIENT_ID", "RTE_CLIENT_SECRET"]:
     if not os.environ.get(var):
         errors.append(f"Variable manquante : {var}") #On vérifie que les variables d'environnement nécessaires pour accéder aux données d'indisponibilité de production nucléaire sont définies.
 
@@ -51,10 +68,9 @@ print("OK  Variables d'environnement OK")
 print()
 
 steps = [
-    ("1/3 Téléchargement ENTSO-E",  "download_entsoe.py"),
-    ("2/3 Téléchargement RTE API",  "download_rte_unavailability.py"),
-    ("3/3 Fusion → CSV final",      "generate_csv_final.py"),
-] # On définit les étapes du processus de mise à jour des données d'indisponibilité de production nucléaire. Chaque étape correspond à un script qui sera exécuté dans l'ordre.
+    ("1/2 Téléchargement RTE API",  "download_rte_unavailability.py"),
+    ("2/2 Fusion → CSV final",      "generate_csv_final.py"),
+]
 
 for msg, script in steps:
     print(f"\n>> {msg}")

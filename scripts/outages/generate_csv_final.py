@@ -78,44 +78,6 @@ df_rte["source"] = "RTE" # Nos données viennent de RTE
 df_rte = df_rte[df_rte["production_source"] == "Nucléaire"].copy() # On filtre les données pour ne garder que celles qui concernent le nucléaire.
 print(f"RTE nucléaire : {len(df_rte)} lignes")
 
-#Ensuite on charge les donnees ENTSO-E
-print("\nChargement ENTSO-E...")
-entsoe_path = os.path.join(OUTPUT_DIR, "indisponibilites_entsoe.csv")
-df_entsoe = pd.read_csv(entsoe_path, sep=";", low_memory=False)
-print(f"ENTSO-E brut : {len(df_entsoe)} lignes")
-
-df_entsoe = df_entsoe[df_entsoe["plant_type"] == "Nuclear"].copy() # On filtre pour garder que celle du nucléaire car le fichier contient tout les types de centrales de production.
-print(f"ENTSO-E nucléaire : {len(df_entsoe)} lignes")
-
-df_entsoe = df_entsoe.rename(columns={
-    "created_doc_time":          "creation_dt (UTC)",
-    "avail_qty":                 "available capacity (MW)",
-    "nominal_power":             "nominal capacity (MW)",
-    "production_resource_name":  "unit_name",
-    "mrid":                      "publication_id",
-    "revision":                  "version",
-    "start":                     "outage_begin_dt (UTC)",
-    "end":                       "outage_end_dt (UTC)",
-    "biddingzone_domain":        "map_code",
-}) # On renomme les colonnes du DataFrame d'ENTSO-E pour les faire correspondre au format que nous utilisons dans le fichier final. Cela facilite la fusion des données d'ENTSO-E avec celles de RTE et de l'API RTE
-
-df_entsoe["production_source"] = "nuclear"
-
-df_entsoe["outage_type"] = df_entsoe["businesstype"].map({
-    "Planned maintenance": "planned",
-    "Unplanned outage":    "fortuitous",
-}).fillna(df_entsoe["businesstype"]) # On crée une nouvelle colonne "outage_type" à partir de la colonne "businesstype" d'ENTSO-E. On mappe les types d'arrêt prévus et non prévus aux valeurs "planned" et "fortuitous" que nous utilisons dans le fichier final. Si un type d'arrêt ne correspond pas à ces catégories, on garde la valeur originale de "businesstype".
-
-for col in ["creation_dt (UTC)", "outage_begin_dt (UTC)", "outage_end_dt (UTC)"]:
-    if col in df_entsoe.columns:
-        df_entsoe[col] = pd.to_datetime(df_entsoe[col], utc=True) # On convertit les colonnes de dates d'ENTSO-E en format datetime avec timezone UTC. Cela nous permet de manipuler les dates de manière cohérente et de les comparer avec les dates des autres sources de données lors de la fusion.
-
-df_entsoe["producer_name"]        = "EDF"
-df_entsoe["outage_cause"]         = ""
-df_entsoe["outage_status"]        = ""
-df_entsoe["publication_dt (UTC)"] = df_entsoe["creation_dt (UTC)"]
-df_entsoe["source"]               = "ENTSOE"
-
 # Enfin on recupere le csv obtenu avec l'API RTE
 print("\nChargement RTE API...")
 rte_api_path = os.path.join(BASE_DIR, "scripts", "outages", "indisponibilites_nucleaires_rte.csv")
@@ -191,19 +153,16 @@ colonnes_finales = [
 for col in colonnes_finales: # Commandes suggérées par l'IA pour s'assurer que toutes les colonnes nécessaires sont présentes dans chaque DataFrame avant de les concaténer. Si une colonne est manquante dans un DataFrame, elle est créée avec des valeurs vides. Cela garantit que la fusion des données se fait correctement sans erreurs dues à des colonnes manquantes.
     if col not in df_rte.columns:
         df_rte[col] = ""
-    if col not in df_entsoe.columns:
-        df_entsoe[col] = ""
     if col not in df_rte_api.columns:
         df_rte_api[col] = ""
 
 df_rte     = df_rte[colonnes_finales]
-df_entsoe  = df_entsoe[colonnes_finales]
 df_rte_api = df_rte_api[colonnes_finales]
 
-#Debut de la fusion 
+#Debut de la fusion
 print("\nFusion...")
-df_final = pd.concat([df_rte, df_entsoe, df_rte_api], ignore_index=True) #Concaténation des Dataframes en un seul final
-print(f"Total : {len(df_final)} lignes  (RTE xlsx: {len(df_rte)}, ENTSO-E: {len(df_entsoe)}, RTE API: {len(df_rte_api)})") #Ici on peut afficher la répartition des données dans le fichier final selon leur source, ce qui nous permet de vérifier que les données de chaque source ont été correctement intégrées dans le fichier final
+df_final = pd.concat([df_rte, df_rte_api], ignore_index=True) #Concaténation des Dataframes en un seul final
+print(f"Total : {len(df_final)} lignes  (RTE xlsx: {len(df_rte)}, RTE API: {len(df_rte_api)})")
 
 #Ensuite on commence le nettoyage 
 print("\nNettoyage...")
@@ -237,7 +196,7 @@ df_final["_dedup_key"] = (
     df_final["outage_type"].str.lower().str.strip()
 ) # On crée une clé de déduplication en combinant le nom de l'unité de production, la date de début de l'arrêt et le type d'arrêt. Cela nous permet d'identifier les lignes qui correspondent au même arrêt, même si elles proviennent de sources différentes ou ont des formats légèrement différents (arrêts prévus ou imprévus).
 
-source_priority = {"RTE": 0, "RTE_API": 1, "ENTSOE": 2}
+source_priority = {"RTE": 0, "RTE_API": 1}
 df_final["_source_rank"] = df_final["source"].map(source_priority).fillna(3) 
 # On attribue une priorité à chaque source de données en créant une nouvelle colonne "_source_rank". Si une source n'est pas reconnue, elle reçoit une priorité de 3
 before_cross = len(df_final)

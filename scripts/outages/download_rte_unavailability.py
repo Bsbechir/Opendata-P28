@@ -12,8 +12,12 @@ import csv
 import time
 import os
 import sys
-from datetime import datetime
-
+env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env")
+if os.path.isfile(env_file):
+    for line in open(env_file):
+        if "=" in line and not line.startswith("#"):
+            k, v = line.strip().split("=", 1)
+            os.environ.setdefault(k, v)
 
 client_id = os.environ.get("RTE_CLIENT_ID")
 client_secret = os.environ.get("RTE_CLIENT_SECRET")
@@ -134,12 +138,6 @@ def main():
 
     for year in range(annee_debut, annee_fin + 1):
         for month in range(1, 13):
-            now = datetime.now()
-            if year == now.year and month > now.month:
-                break
-            if year > now.year:
-                break # On ne télécharge pas ici les données des mois futurs
-
             print(f"  {year}-{month:02d}...", end=" ", flush=True)
 
             result = download_month(token, year, month)# On télécharge les données d'indisponibilité pour le mois en cours.
