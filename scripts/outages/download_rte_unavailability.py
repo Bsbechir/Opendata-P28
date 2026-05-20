@@ -39,6 +39,23 @@ annee_fin = 2026
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 fichier_csv = os.path.join(SCRIPT_DIR, "indisponibilites_nucleaires_rte.csv")
 
+def get_proxy_config():
+    """
+    Construit le dictionnaire de proxy si les variables sont définies dans l'environnement.
+    """
+    proxies = {}
+    http = os.environ.get("HTTP_PROXY")
+    https = os.environ.get("HTTPS_PROXY")
+    
+    if http:
+        proxies["http"] = http
+    if https:
+        proxies["https"] = https
+        
+    return proxies # Cette fonction vérifie les variables d'environnement HTTP_PROXY et HTTPS_PROXY pour construire un dictionnaire de configuration de proxy à utiliser dans les requêtes HTTP. 
+    #  ces variables sont définies, elles sont ajoutées au dictionnaire sous les clés "http" et "https". 
+    # Si elles ne sont pas définies, le dictionnaire de proxy sera vide, ce qui signifie que les requêtes seront faites directement sans passer par un proxy.
+
 
 def get_token():
     """
@@ -46,10 +63,11 @@ def get_token():
     Utilise la méthode 'Basic Auth' pour envoyer les identifiants client.
     """
     credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode() # On concatène l'ID client et le code secret. Puis on encode cette chaîne en base64(format requis)
+    proxies = get_proxy_config() # On récupère la configuration de proxy à utiliser pour la requête, si elle est définie dans les variables d'environnement. Cela permet au script de fonctionner correctement même dans des environnements où un proxy est nécessaire pour accéder à Internet.
     r = requests.post(
         f"{url_base}/token/oauth/",
-        headers={"Authorization": f"Basic {credentials}"}
-    ) # On envoie une requête POST pour obtenir le token d'accès auprès du serveur d'authentification. L'URL et les paramètres sont spécifiques à l'API RTE.
+        headers={"Authorization": f"Basic {credentials}"},
+        proxies=proxies ) # On envoie une requête POST pour obtenir le token d'accès auprès du serveur d'authentification. L'URL et les paramètres sont spécifiques à l'API RTE.
     if r.status_code != 200:
         print(f"Erreur token: {r.status_code} {r.text}") #La requête n'est pas acceptée
         return None
@@ -72,8 +90,8 @@ def download_month(token, year, month):
         "start_date": start,
         "end_date": end,
     }
-
-    r = requests.get(url_api, headers=headers, params=params)
+    proxies = get_proxy_config()
+    r = requests.get(url_api, headers=headers, params=params, proxies=proxies) # On envoie une requête GET à l'API pour télécharger les données d'indisponibilité pour le mois spécifié. Les paramètres de la requête incluent les dates de début et de fin, et l'en-tête d'autorisation avec le token d'accès.
 
     if r.status_code in [200, 206]: # Dans le cas d'une authentification réussie
         data = r.json() # On récupère la liste des données d'indisponibilités. 

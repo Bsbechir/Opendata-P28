@@ -203,7 +203,7 @@ before_cross = len(df_final)
 df_final = df_final.drop_duplicates(subset=["_dedup_key"], keep="first")# On supprime les doublons en ne gardant que la ligne avec la source la plus prioritaire pour chaque clé de déduplication
 print(f"Dédup cross-source : {before_cross} → {len(df_final)} ({before_cross - len(df_final)} doublons retirés)")
 
-df_final = df_final.drop(columns=["_dedup_key", "_source_rank"]) # On supprime les colonnes temporaires utilisées pour la déduplication
+df_final = df_final.drop(columns=["_dedup_key", "_source_rank","source"]) # On supprime les colonnes temporaires utilisées pour la déduplication (dont la source)
 df_final = df_final.sort_values("outage_begin_dt (UTC)").reset_index(drop=True)
 print(f"Après déduplication : {len(df_final)} lignes")
 print(f"Réacteurs distincts : {df_final['unit_name'].nunique()}")
@@ -212,4 +212,4 @@ output_file = os.path.join(OUTPUT_DIR, "indisponibilites_nucleaire_final.csv") #
 df_final.to_csv(output_file, sep=";", index=False, encoding="utf-8")
 print(f"\nCSV exporté : {output_file}")
 print(f"Lignes : {len(df_final)}")
-print(f"Sources : {df_final['source'].value_counts().to_dict()}")
+

@@ -8,12 +8,11 @@ Nous avons construit ce travail à partir d'un repo Git fourni par l'entreprise 
 
 ## Objectif
 
-Le but est premièrement de récuperer les données d'indisponibilités du parc nucleaire français en s'appuyant sur les publications d'ENTSOE et RTE. 
-Ensuite, le but était de nettoyer les données puis les fusionner afin de créer un CSV qui répertorie toutes les informations des deux sources.
-Dans le cadre de notre projet, ce fichier CSV devait ensuite pouvoir être éventuellement utilisé pour être publié sur l'Open-Data d'EDF. Il devait pouvoir également servir à alimenter un site que nos camarades construisent, qui propose une visualisation de ces données.
+Le but est premièrement de récuperer les données d'indisponibilités du parc nucleaire français en s'appuyant sur les publications de RTE. 
+Ensuite, de nettoyer les données puis les fusionner afin de créer un CSV qui répertorie toutes les informations des deux sources.
+Dans le cadre de notre projet, ce fichier CSV est publié sur l'Open-Data d'EDF. Il a pu également servir à alimenter un site que nos camarades construisent, qui propose une visualisation de ces données (le travail sur le site constitue la deuxième partie de notre projet).
 
-Note importante: On ne réalise pas d'API ici. On utilise celles de ENTSOE et RTE pour construire un fichier.
-
+> **Note sur l'architecture du projet** : Ce script agit comme un consommateur de flux. Nous ne développons pas une nouvelle API publique ; nous requêtons l'API existantes de RTE et lisons des fichiers locaux pour consolider l'ensemble des données dans un fichier plat unique.
 
 ## Sources utilisées
 
@@ -25,7 +24,7 @@ Note importante: Ce projet s'appuie sur le cadre réglementaire européen REMIT 
 | RTE API | Automatique (API REST) | `download_rte_unavailability.py` | Règlement REMIT : Obligation de transparence immédiate sur les informations privilégiées |
 
 
-### Pourquoi cette sources ?
+### Pourquoi prendre RTE comme source ?
 
 Obligation Miroir : En vertu du règlement REMIT, toute indisponibilité de production doit être publiée simultanément sur la plateforme nationale (RTE).
 
@@ -34,7 +33,7 @@ Obligation Miroir : En vertu du règlement REMIT, toute indisponibilité de prod
 
 **Fichier** : `output/indisponibilites_nucleaire_final.csv`
 
-**Ordre de grandeur** : environ 110 000 lignes avant les derniers nettoyages, 58 reacteurs, 3 sources au depart. Le nombre final peut changer si on relance les scripts avec de nouvelles donnees.
+**Ordre de grandeur** : environ 110 000 lignes avant les derniers nettoyages, 58 reacteurs, 3 sources au depart. Le nombre final peut changer si on relance les scripts avec de nouvelles données.
 
 Voici la description des colonnes présentes sur le CSV :
 
@@ -55,7 +54,6 @@ Voici la description des colonnes présentes sur le CSV :
 | `outage_type` | Type d'arrêt | `planned` ou `fortuitous` |
 | `outage_cause` | Cause (si dispo) | `Maintenance prévue` |
 | `outage_status` | Statut | `Actif`, `Inactif`, `Annulé` |
-| `source` | Provenance | `RTE`, `RTE_API`, `ENTSOE` |
 
 ### Limites connues de nos sources
 
@@ -180,15 +178,17 @@ RTE_CLIENT_SECRET=votre_client_secret_ici
 
 ## Utilisation
 
+*Note importante*: Selon la configuration de votre système et si vous n'utilisez pas d'environnement virtuel, il se peut que vous deviez remplacer la commande python3 par python (notamment sous Windows).
+
 ```bash
-# Pour obtenir le fichier CSV vous pouvez lancez
+# Pour obtenir le fichier CSV vous pouvez lancer:
 python3 scripts/outages/update.py
 
-# Sinon on peut toujours relancer les étapes une par une
+# Sinon on peut toujours relancer les étapes une par une:
 python3 scripts/outages/download_rte_unavailability.py
 python3 scripts/outages/generate_csv_final.py
 
-# Nous avons de plus garder et reconfigurer une visualisation présente sur le Git de La CRE vous devez exécuter ces fichiers après avoir obtenu le CSV
+# Nous avons de plus gardé et reconfiguré une visualisation présente sur le Git de La CRE vous devez exécuter ces fichiers après avoir obtenu le CSV.
 
 python3 scripts/outages/main_incremental_programs.py --list
 python3 scripts/outages/main_incremental_programs.py --centrale "GRAVELINES 1"
